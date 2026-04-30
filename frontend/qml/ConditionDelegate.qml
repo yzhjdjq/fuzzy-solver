@@ -18,12 +18,12 @@ Item {
     signal remove()
     signal addCondition()
     
-    implicitHeight: 40
+    implicitHeight: 36
     implicitWidth: 200
     
     RowLayout {
         anchors.fill: parent
-        spacing: 5
+        spacing: 8
         
         ComboBox {
             id: variableCombo
@@ -43,9 +43,68 @@ Item {
                 return idx >= 0 ? idx : 0
             }
             Layout.fillWidth: true
+            Layout.minimumWidth: 120
+            Layout.preferredHeight: 36
+            implicitHeight: 36
+            
+            background: Rectangle {
+                radius: 6
+                color: parent.hovered ? "#F5F5F5" : "#FFFFFF"
+                border.color: "#E0E0E0"
+                border.width: 1
+            }
+            
+            contentItem: Text {
+                text: parent.displayText
+                color: "#2D3436"
+                font.pixelSize: 14
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: 12
+                rightPadding: 12
+                elide: Text.ElideRight
+                clip: true
+            }
+            
+            indicator: Canvas {
+                x: parent.width - width - 8
+                y: (parent.height - height) / 2
+                width: 12
+                height: 8
+                contextType: "2d"
+                
+                onPaint: {
+                    context.reset();
+                    context.moveTo(0, 0);
+                    context.lineTo(width, 0);
+                    context.lineTo(width / 2, height);
+                    context.closePath();
+                    context.fillStyle = "#636E72";
+                    context.fill();
+                }
+            }
+            
+            delegate: ItemDelegate {
+                width: parent.width
+                height: 36
+                
+                contentItem: Text {
+                    text: modelData
+                    color: "#2D3436"
+                    font.pixelSize: 14
+                    verticalAlignment: Text.AlignVCenter
+                    leftPadding: 12
+                    elide: Text.ElideRight
+                }
+                
+                background: Rectangle {
+                    color: hovered ? "#F0EDFF" : "#FFFFFF"
+                    radius: 4
+                }
+                
+                highlighted: parent.highlightedIndex === index
+            }
             
             onCurrentTextChanged: {
-                // Не отправляем сигнал при инициализации
                 if (currentText !== currentVariable) {
                     delegateRoot.variableChanged(-1, groupType, conditionIndex, currentText)
                 }
@@ -57,10 +116,49 @@ Item {
             model: ["и", "или"]
             currentIndex: currentOperator === "или" ? 1 : 0
             visible: !isLast
-            Layout.preferredWidth: 60
+            Layout.preferredWidth: 70
+            Layout.minimumWidth: 60
+            Layout.preferredHeight: 36
+            implicitHeight: 36
+            
+            background: Rectangle {
+                radius: 6
+                color: parent.hovered ? "#F0EDFF" : "#FFFFFF"
+                border.color: "#E0E0E0"
+                border.width: 1
+            }
+            
+            contentItem: Text {
+                text: parent.displayText
+                color: "#6C5CE7"
+                font.pixelSize: 14
+                font.weight: Font.Medium
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
+                leftPadding: 8
+                rightPadding: 8
+            }
+            
+            delegate: ItemDelegate {
+                width: parent.width
+                height: 36
+                
+                contentItem: Text {
+                    text: modelData
+                    color: "#6C5CE7"
+                    font.pixelSize: 14
+                    font.weight: Font.Medium
+                    verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignHCenter
+                }
+                
+                background: Rectangle {
+                    color: hovered ? "#F0EDFF" : "#FFFFFF"
+                    radius: 4
+                }
+            }
             
             onCurrentTextChanged: {
-                // Не отправляем сигнал при инициализации
                 if (currentText !== currentOperator) {
                     delegateRoot.operatorChanged(-1, groupType, conditionIndex, currentText)
                 }
@@ -68,15 +166,28 @@ Item {
         }
         
         Button {
-            text: "×"
+            text: "✕"
             visible: showRemove
             onClicked: delegateRoot.remove()
-            Layout.preferredWidth: 30
-            Layout.preferredHeight: 30
+            Layout.preferredWidth: 36
+            Layout.preferredHeight: 36
+            Layout.alignment: Qt.AlignVCenter
             
             background: Rectangle {
-                color: "#ff6b6b"
-                radius: 3
+                radius: 8
+                color: parent.hovered ? "#FFE5E5" : "transparent"
+                
+                Behavior on color {
+                    ColorAnimation { duration: 200 }
+                }
+            }
+            
+            contentItem: Text {
+                text: parent.text
+                color: parent.hovered ? "#FF7675" : "#B0B0B0"
+                font.pixelSize: 14
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
             }
         }
         
@@ -84,12 +195,26 @@ Item {
             text: "+"
             visible: showAddButton && isLast
             onClicked: delegateRoot.addCondition()
-            Layout.preferredWidth: 30
-            Layout.preferredHeight: 30
+            Layout.preferredWidth: 36
+            Layout.preferredHeight: 36
+            Layout.alignment: Qt.AlignVCenter
             
             background: Rectangle {
-                color: "#4caf50"
-                radius: 3
+                radius: 8
+                color: parent.hovered ? "#E8F5E9" : "#F0F0F0"
+                
+                Behavior on color {
+                    ColorAnimation { duration: 200 }
+                }
+            }
+            
+            contentItem: Text {
+                text: parent.text
+                color: parent.hovered ? "#00B894" : "#636E72"
+                font.pixelSize: 16
+                font.weight: Font.Bold
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
             }
         }
     }

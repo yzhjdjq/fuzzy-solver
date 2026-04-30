@@ -48,6 +48,16 @@ class RuleController(QObject):
         self._rules = rules_dict
         self.rulesChanged.emit(self._rules)
     
+    @Slot(int, result=str)
+    def pluralizeRules(self, count: int) -> str:
+        """Склоняет слово `правило` в зависимости от числа"""
+        if count % 10 == 1 and count % 100 != 11:
+            return "правило"
+        elif 2 <= count % 10 <= 4 and (count % 100 < 10 or count % 100 >= 20):
+            return "правила"
+        else:
+            return "правил"
+
     @Slot()
     def addRule(self):
         """Добавить новое правило"""
