@@ -4,11 +4,17 @@ from PySide6.QtCore import QObject, Signal, Slot, Property
 from PySide6.QtQml import QmlElement
 from typing import List, Dict, Any
 
-# Добавляем корневой путь в sys.path для корректного импорта
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from backend.rule_engine import RuleEngine
-from backend.fuzzy_models import Rule, Condition, LogicalOperator, FuzzyVariable
+from backend.fuzzy_models import Rule, Condition, LogicalOperator, VariableType, FuzzyTerm, LinguisticVariable
+
+try:
+    import pymorphy3
+    morph = pymorphy3.MorphAnalyzer()
+except ImportError:
+    morph = None
+    print("Предупреждение: pymorphy3 не установлен. Склонение слов не будет работать.")
 
 QML_IMPORT_NAME = "RuleController"
 QML_IMPORT_MAJOR_VERSION = 1
@@ -16,23 +22,38 @@ QML_IMPORT_MAJOR_VERSION = 1
 @QmlElement
 class RuleController(QObject):
     rulesChanged = Signal(list)
+    variablesChanged = Signal(list)
     errorOccurred = Signal(str)
     
     def __init__(self):
         super().__init__()
         self.engine = RuleEngine()
         self._rules = []
+        self._variables = []
         self._initialize_default_data()
     
     def _initialize_default_data(self):
         """Инициализация тестовыми данными"""
+        # Добавляем тестовое правило
+        input_vars = self.engine.get_input_variables()
+        output_vars = self.engine.get_output_variables()
+        
         test_rule = Rule(
             id=0,
-            conditions=[Condition(variable=FuzzyVariable.TEMPERATURE_LOW, operator=LogicalOperator.AND)],
-            conclusions=[Condition(variable=FuzzyVariable.PRESSURE_HIGH, operator=LogicalOperator.AND)]
+            conditions=[Condition(
+                variable_id=input_vars[0].id if input_vars else 0,
+                term=input_vars[0].terms[0].name if input_vars and input_vars[0].terms else "",
+                operator=LogicalOperator.AND
+            )],
+            conclusions=[Condition(
+                variable_id=output_vars[0].id if output_vars else 0,
+                term=output_vars[0].terms[0].name if output_vars and output_vars[0].terms else "",
+                operator=LogicalOperator.AND
+            )]
         )
         self.engine.rule_set.rules.append(test_rule)
         self._update_rules_model()
+        self._update_variables_model()
     
     def _update_rules_model(self):
         """Обновить модель правил для QML"""
@@ -40,24 +61,69 @@ class RuleController(QObject):
         for rule in self.engine.rule_set.rules:
             rules_dict.append({
                 "id": rule.id,
-                "conditions": [{"variable": c.variable.value, "operator": c.operator.value} 
+                "conditions": [{"variable_id": c.variable_id, "term": c.term, "operator": c.operator.value} 
                              for c in rule.conditions],
-                "conclusions": [{"variable": c.variable.value, "operator": c.operator.value} 
+                "conclusions": [{"variable_id": c.variable_id, "term": c.term, "operator": c.operator.value} 
                               for c in rule.conclusions]
             })
         self._rules = rules_dict
         self.rulesChanged.emit(self._rules)
     
+    def _update_variables_model(self):
+        """Обновить модель переменных для QML"""
+        variables_dict = []
+        for var in self.engine.rule_set.linguistic_variables:
+            variables_dict.append({
+                "id": var.id,
+                "name": var.name,
+                "type": var.type.value,
+                "terms": [{"name": t.name} for t in var.terms]
+            })
+        self._variables = variables_dict
+        self.variablesChanged.emit(self._variables)
+    
     @Slot(int, result=str)
     def pluralizeRules(self, count: int) -> str:
-        """Склоняет слово `правило` в зависимости от числа"""
+        """Склоняет слово 'правило' в зависимости от числа"""
+        if morph is None:
+            if count % 10 == 1 and count % 100 != 11:
+                return "правило"
+            elif 2 <= count % 10 <= 4 and (count % 100 < 10 or count % 100 >= 20):
+                return "правила"
+            else:
+                return "правил"
+        
+        word = morph.parse('правило')[0]
         if count % 10 == 1 and count % 100 != 11:
-            return "правило"
-        elif 2 <= count % 10 <= 4 and (count % 100 < 10 or count % 100 >= 20):
-            return "правила"
+            return word.inflect({'sing', 'nomn'}).word
         else:
-            return "правил"
-
+            return word.inflect({'plur', 'gent'}).word
+    
+    @Slot(result=list)
+    def getInputVariables(self):
+        """Получить входные переменные для QML"""
+        result = []
+        for var in self.engine.get_input_variables():
+            result.append({
+                "id": var.id,
+                "name": var.name,
+                "terms": [t.name for t in var.terms]
+            })
+        return result
+    
+    @Slot(result=list)
+    def getOutputVariables(self):
+        """Получить выходные переменные для QML"""
+        result = []
+        for var in self.engine.get_output_variables():
+            result.append({
+                "id": var.id,
+                "name": var.name,
+                "terms": [t.name for t in var.terms]
+            })
+        return result
+    
+    # Методы для работы с правилами
     @Slot()
     def addRule(self):
         """Добавить новое правило"""
@@ -66,12 +132,7 @@ class RuleController(QObject):
                 self.errorOccurred.emit("Достигнуто максимальное количество правил (10)")
                 return
                 
-            new_rule = Rule(
-                id=len(self.engine.rule_set.rules),
-                conditions=[Condition(variable=FuzzyVariable.TEMPERATURE_LOW, operator=LogicalOperator.AND)],
-                conclusions=[Condition(variable=FuzzyVariable.PRESSURE_HIGH, operator=LogicalOperator.AND)]
-            )
-            self.engine.rule_set.rules.append(new_rule)
+            self.engine.add_rule()
             self._update_rules_model()
         except Exception as e:
             self.errorOccurred.emit(f"Ошибка при создании правила: {str(e)}")
@@ -80,27 +141,28 @@ class RuleController(QObject):
     def removeRule(self, rule_id: int):
         """Удалить правило"""
         try:
-            if len(self.engine.rule_set.rules) <= 1:
-                self.errorOccurred.emit("Нельзя удалить последнее правило")
-                return
-                
             self.engine.remove_rule(rule_id)
             self._update_rules_model()
         except Exception as e:
             self.errorOccurred.emit(f"Ошибка при удалении правила: {str(e)}")
-    
+
     @Slot(int, str)
     def addCondition(self, rule_id: int, group_type: str):
         """Добавить условие в правило"""
-        from backend.fuzzy_models import Condition, FuzzyVariable
-        
         rule = next((r for r in self.engine.rule_set.rules if r.id == rule_id), None)
         if not rule:
             return
         
         target_list = rule.conditions if group_type == "condition" else rule.conclusions
         if len(target_list) < 3:
-            target_list.append(Condition(variable=FuzzyVariable.TEMPERATURE_LOW, operator=LogicalOperator.AND))
+            # Берем первую доступную переменную
+            variables = self.engine.get_input_variables() if group_type == "condition" else self.engine.get_output_variables()
+            new_condition = Condition()
+            if variables:
+                new_condition.variable_id = variables[0].id
+                new_condition.term = variables[0].terms[0].name if variables[0].terms else ""
+            
+            target_list.append(new_condition)
             self._update_rules_model()
         else:
             self.errorOccurred.emit("Максимум 3 условия")
@@ -119,31 +181,26 @@ class RuleController(QObject):
         else:
             self.errorOccurred.emit("Должно быть минимум одно условие")
     
-    @Slot(int, str, int, str)
-    def updateConditionVariable(self, rule_id: int, group_type: str, index: int, variable: str):
-        """Обновить только переменную условия, сохраняя оператор"""
+    @Slot(int, str, int, int, str)
+    def updateConditionVariable(self, rule_id: int, group_type: str, index: int, variable_id: int, term: str):
+        """Обновить переменную и терм условия"""
         try:
-            from backend.fuzzy_models import FuzzyVariable
-            
             rule = next((r for r in self.engine.rule_set.rules if r.id == rule_id), None)
             if not rule:
                 return
             
             target_list = rule.conditions if group_type == "condition" else rule.conclusions
             if 0 <= index < len(target_list):
-                target_list[index].variable = FuzzyVariable(variable)
+                target_list[index].variable_id = variable_id
+                target_list[index].term = term
                 self._update_rules_model()
-        except ValueError as e:
-            print(f"Предупреждение при обновлении переменной: {e}")
         except Exception as e:
             self.errorOccurred.emit(f"Ошибка при обновлении переменной: {str(e)}")
     
     @Slot(int, str, int, str)
     def updateConditionOperator(self, rule_id: int, group_type: str, index: int, operator: str):
-        """Обновить только оператор условия, сохраняя переменную"""
+        """Обновить оператор условия"""
         try:
-            from backend.fuzzy_models import LogicalOperator
-            
             rule = next((r for r in self.engine.rule_set.rules if r.id == rule_id), None)
             if not rule:
                 return
@@ -152,17 +209,152 @@ class RuleController(QObject):
             if 0 <= index < len(target_list):
                 target_list[index].operator = LogicalOperator(operator)
                 self._update_rules_model()
-        except ValueError as e:
-            print(f"Предупреждение при обновлении оператора: {e}")
         except Exception as e:
             self.errorOccurred.emit(f"Ошибка при обновлении оператора: {str(e)}")
+    
+    # Методы для работы с лингвистическими переменными
+    @Slot(str, str)
+    def addLinguisticVariable(self, name: str, var_type: str):
+        """Добавить лингвистическую переменную"""
+        try:
+            self.engine.add_linguistic_variable(name, VariableType(var_type))
+            self._update_variables_model()
+        except Exception as e:
+            self.errorOccurred.emit(f"Ошибка при добавлении переменной: {str(e)}")
+    
+    @Slot(int)
+    def removeLinguisticVariable(self, var_id: int):
+        """Удалить лингвистическую переменную"""
+        try:
+            self.engine.remove_linguistic_variable(var_id)
+            self._update_variables_model()
+        except Exception as e:
+            self.errorOccurred.emit(f"Ошибка при удалении переменной: {str(e)}")
+    
+    @Slot(int, str, str)
+    def updateLinguisticVariable(self, var_id: int, name: str, var_type: str):
+        """Обновить лингвистическую переменную"""
+        try:
+            var = self.engine.get_variable_by_id(var_id)
+            if var:
+                var.name = name
+                var.type = VariableType(var_type)
+                self._update_variables_model()
+        except Exception as e:
+            self.errorOccurred.emit(f"Ошибка при обновлении переменной: {str(e)}")
     
     @Slot()
     def evaluate(self):
         """Выполнить расчет"""
         json_data = self.engine.to_json()
-        print("Текущие правила:", json_data)
+        print("Текущие правила и переменные:", json_data)
     
     @Property(list, notify=rulesChanged)
     def rules(self):
         return self._rules
+    
+    @Property(list, notify=variablesChanged)
+    def variables(self):
+        return self._variables
+
+    @Slot()
+    def evaluate(self):
+        """Выполнить расчет с проверками"""
+        # Проверки
+        if len(self.engine.get_input_variables()) == 0:
+            self.errorOccurred.emit("Добавьте хотя бы одну входную лингвистическую переменную")
+            return
+        
+        if len(self.engine.get_output_variables()) == 0:
+            self.errorOccurred.emit("Добавьте хотя бы одну выходную лингвистическую переменную")
+            return
+        
+        if len(self.engine.rule_set.rules) == 0:
+            self.errorOccurred.emit("Добавьте хотя бы одно правило")
+            return
+        
+        # Проверка, что все правила используют существующие переменные
+        for rule in self.engine.rule_set.rules:
+            for condition in rule.conditions:
+                var = self.engine.get_variable_by_id(condition.variable_id)
+                if not var or var.type != VariableType.INPUT:
+                    self.errorOccurred.emit(f"Правило {rule.id + 1}: условие использует несуществующую или не входную переменную")
+                    return
+            
+            for conclusion in rule.conclusions:
+                var = self.engine.get_variable_by_id(conclusion.variable_id)
+                if not var or var.type != VariableType.OUTPUT:
+                    self.errorOccurred.emit(f"Правило {rule.id + 1}: заключение использует несуществующую или не выходную переменную")
+                    return
+        
+        json_data = self.engine.to_json()
+        print("Текущие правила и переменные:", json_data)
+        # Здесь будет вызов нечеткого вывода
+
+    @Slot(int, result=str)
+    def pluralizeInput(self, count: int) -> str:
+        """Склоняет 'входная переменная' в зависимости от числа"""
+        if morph is None:
+            if count % 10 == 1 and count % 100 != 11:
+                return "входная"
+            else:
+                return "входных"
+        
+        word = morph.parse('входной')[0]
+        if count % 10 == 1 and count % 100 != 11:
+            return word.inflect({'sing', 'nomn', 'femn'}).word  # входная
+        else:
+            return word.inflect({'plur', 'gent'}).word  # входных
+
+    @Slot(int, result=str)
+    def pluralizeOutput(self, count: int) -> str:
+        """Склоняет 'выходная переменная' в зависимости от числа"""
+        if morph is None:
+            if count % 10 == 1 and count % 100 != 11:
+                return "выходная"
+            else:
+                return "выходных"
+        
+        word = morph.parse('выходной')[0]
+        if count % 10 == 1 and count % 100 != 11:
+            return word.inflect({'sing', 'nomn', 'femn'}).word  # выходная
+        else:
+            return word.inflect({'plur', 'gent'}).word  # выходных
+
+    @Slot(int, result=str)
+    def pluralizeVariables(self, count: int) -> str:
+        """Склоняет 'переменная' в зависимости от числа"""
+        if morph is None:
+            if count % 10 == 1 and count % 100 != 11:
+                return "переменная"
+            elif 2 <= count % 10 <= 4 and (count % 100 < 10 or count % 100 >= 20):
+                return "переменные"
+            else:
+                return "переменных"
+        
+        word = morph.parse('переменная')[0]
+        if count % 10 == 1 and count % 100 != 11:
+            return word.inflect({'sing', 'nomn'}).word  # переменная
+        elif 2 <= count % 10 <= 4 and (count % 100 < 10 or count % 100 >= 20):
+            return word.inflect({'plur', 'nomn'}).word  # переменные
+        else:
+            return word.inflect({'plur', 'gent'}).word  # переменных
+
+    @Slot(int, result=str)
+    def pluralizeRules(self, count: int) -> str:
+        """Склоняет 'правило' в зависимости от числа"""
+        if morph is None:
+            if count % 10 == 1 and count % 100 != 11:
+                return "правило"
+            elif 2 <= count % 10 <= 4 and (count % 100 < 10 or count % 100 >= 20):
+                return "правила"
+            else:
+                return "правил"
+        
+        word = morph.parse('правило')[0]
+        if count % 10 == 1 and count % 100 != 11:
+            return word.inflect({'sing', 'nomn'}).word  # правило
+        elif 2 <= count % 10 <= 4 and (count % 100 < 10 or count % 100 >= 20):
+            return word.inflect({'plur', 'nomn'}).word  # правила
+        else:
+            return word.inflect({'plur', 'gent'}).word  # правил

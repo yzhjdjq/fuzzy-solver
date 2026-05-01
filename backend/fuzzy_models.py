@@ -6,19 +6,31 @@ class LogicalOperator(str, Enum):
     AND = "и"
     OR = "или"
 
-class FuzzyVariable(str, Enum):
-    TEMPERATURE_LOW = "Температура низкая"
-    TEMPERATURE_MEDIUM = "Температура средняя"
-    TEMPERATURE_HIGH = "Температура высокая"
-    PRESSURE_LOW = "Давление низкое"
-    PRESSURE_MEDIUM = "Давление среднее"
-    PRESSURE_HIGH = "Давление высокое"
-    HUMIDITY_LOW = "Влажность низкая"
-    HUMIDITY_MEDIUM = "Влажность средняя"
-    HUMIDITY_HIGH = "Влажность высокая"
+class VariableType(str, Enum):
+    INPUT = "входная"
+    OUTPUT = "выходная"
+
+class FuzzyTerm(BaseModel):
+    name: str
+    # Функция принадлежности может быть добавлена позже
+    # type: str  # треугольная, трапециевидная, гауссова и т.д.
+    # params: List[float]  # параметры функции
+
+class LinguisticVariable(BaseModel):
+    id: int
+    name: str
+    type: VariableType
+    terms: List[FuzzyTerm] = Field(default=[], min_items=1)
+
+    @validator('terms')
+    def check_terms(cls, v):
+        if not v or len(v) < 1:
+            raise ValueError('Должна быть минимум одна терма')
+        return v
 
 class Condition(BaseModel):
-    variable: FuzzyVariable = FuzzyVariable.TEMPERATURE_LOW
+    variable_id: int = 0
+    term: str = ""
     operator: LogicalOperator = LogicalOperator.AND
 
 class Rule(BaseModel):
@@ -36,6 +48,7 @@ class Rule(BaseModel):
 
 class RuleSet(BaseModel):
     rules: List[Rule] = Field(default=[], max_items=10)
+    linguistic_variables: List[LinguisticVariable] = Field(default=[])
     
     @validator('rules')
     def check_rules_size(cls, v):

@@ -7,13 +7,16 @@ Item {
     
     property int conditionIndex: 0
     property string groupType: ""
-    property string currentVariable: "Температура низкая"
+    property var variablesModel: []
+    property var termsModel: []
+    property int currentVariableId: 0
+    property string currentTerm: ""
     property string currentOperator: "и"
     property bool isLast: true
     property bool showRemove: true
     property bool showAddButton: false
     
-    signal variableChanged(int ruleId, string group, int index, string variable)
+    signal variableChanged(int ruleId, string group, int index, int variableId, string term)
     signal operatorChanged(int ruleId, string group, int index, string operator)
     signal remove()
     signal addCondition()
@@ -27,21 +30,17 @@ Item {
         
         ComboBox {
             id: variableCombo
-            model: [
-                "Температура низкая",
-                "Температура средняя",
-                "Температура высокая",
-                "Давление низкое",
-                "Давление среднее",
-                "Давление высокое",
-                "Влажность низкая",
-                "Влажность средняя",
-                "Влажность высокая"
-            ]
+            model: variablesModel
+            textRole: "name"
+            valueRole: "id"
+            
             currentIndex: {
-                var idx = model.indexOf(currentVariable)
-                return idx >= 0 ? idx : 0
+                for (var i = 0; i < variablesModel.length; i++) {
+                    if (variablesModel[i].id === currentVariableId) return i
+                }
+                return 0
             }
+            
             Layout.fillWidth: true
             Layout.minimumWidth: 120
             Layout.preferredHeight: 36
@@ -65,48 +64,11 @@ Item {
                 clip: true
             }
             
-            indicator: Canvas {
-                x: parent.width - width - 8
-                y: (parent.height - height) / 2
-                width: 12
-                height: 8
-                contextType: "2d"
-                
-                onPaint: {
-                    context.reset();
-                    context.moveTo(0, 0);
-                    context.lineTo(width, 0);
-                    context.lineTo(width / 2, height);
-                    context.closePath();
-                    context.fillStyle = "#636E72";
-                    context.fill();
-                }
-            }
-            
-            delegate: ItemDelegate {
-                width: parent.width
-                height: 36
-                
-                contentItem: Text {
-                    text: modelData
-                    color: "#2D3436"
-                    font.pixelSize: 14
-                    verticalAlignment: Text.AlignVCenter
-                    leftPadding: 12
-                    elide: Text.ElideRight
-                }
-                
-                background: Rectangle {
-                    color: hovered ? "#F0EDFF" : "#FFFFFF"
-                    radius: 4
-                }
-                
-                highlighted: parent.highlightedIndex === index
-            }
-            
-            onCurrentTextChanged: {
-                if (currentText !== currentVariable) {
-                    delegateRoot.variableChanged(-1, groupType, conditionIndex, currentText)
+            onCurrentIndexChanged: {
+                if (currentIndex >= 0 && variablesModel[currentIndex]) {
+                    var varId = variablesModel[currentIndex].id
+                    var term = termsModel.length > 0 ? termsModel[0] : ""
+                    delegateRoot.variableChanged(-1, groupType, conditionIndex, varId, term)
                 }
             }
         }
@@ -139,25 +101,6 @@ Item {
                 rightPadding: 8
             }
             
-            delegate: ItemDelegate {
-                width: parent.width
-                height: 36
-                
-                contentItem: Text {
-                    text: modelData
-                    color: "#6C5CE7"
-                    font.pixelSize: 14
-                    font.weight: Font.Medium
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignHCenter
-                }
-                
-                background: Rectangle {
-                    color: hovered ? "#F0EDFF" : "#FFFFFF"
-                    radius: 4
-                }
-            }
-            
             onCurrentTextChanged: {
                 if (currentText !== currentOperator) {
                     delegateRoot.operatorChanged(-1, groupType, conditionIndex, currentText)
@@ -171,7 +114,6 @@ Item {
             onClicked: delegateRoot.remove()
             Layout.preferredWidth: 36
             Layout.preferredHeight: 36
-            Layout.alignment: Qt.AlignVCenter
             
             background: Rectangle {
                 radius: 8
@@ -197,7 +139,6 @@ Item {
             onClicked: delegateRoot.addCondition()
             Layout.preferredWidth: 36
             Layout.preferredHeight: 36
-            Layout.alignment: Qt.AlignVCenter
             
             background: Rectangle {
                 radius: 8

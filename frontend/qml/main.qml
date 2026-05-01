@@ -9,22 +9,38 @@ ApplicationWindow {
     visible: true
     width: 800
     height: 600
-    minimumWidth: 620
-    minimumHeight: 380
     title: "Решатель 0.1.0"
     color: "#F8F9FA"
     
+    minimumWidth: 620
+    minimumHeight: 450
+    
     property var rulesModel: []
+    property var variablesModel: []
+    property var inputVariablesModel: []
+    property var outputVariablesModel: []
     
     Component.onCompleted: {
         rulesModel = ruleController.rules
+        variablesModel = ruleController.variables
+        updateVariableModels()
     }
+    
+    function updateVariableModels() {
+        inputVariablesModel = ruleController.getInputVariables()
+        outputVariablesModel = ruleController.getOutputVariables()
+    }
+    
+    // Вычисляемые свойства для статистики
+    property int inputVarsCount: inputVariablesModel.length
+    property int outputVarsCount: outputVariablesModel.length
+    property int totalVarsCount: variablesModel.length
     
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
         
-        // Современный заголовок
+        // Заголовок
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 80
@@ -38,7 +54,6 @@ ApplicationWindow {
                 anchors.fill: parent
                 color: "transparent"
                 
-                // Декоративные круги
                 Rectangle {
                     width: 120
                     height: 120
@@ -68,7 +83,6 @@ ApplicationWindow {
                 anchors.margins: 20
                 spacing: 15
                 
-                // Логотип - график функции принадлежности
                 Rectangle {
                     width: 40
                     height: 40
@@ -116,7 +130,6 @@ ApplicationWindow {
                 
                 Item { Layout.fillWidth: true }
                 
-                // Версия приложения с улучшенной видимостью
                 Rectangle {
                     width: 60
                     height: 24
@@ -137,116 +150,330 @@ ApplicationWindow {
             }
         }
         
-        // Основной контент
-        Item {
+        // Основной контент со скроллом
+        ScrollView {
+            id: scrollView
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.margins: 20
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             
-            ColumnLayout {
+            Flickable {
                 anchors.fill: parent
-                spacing: 15
+                contentWidth: parent.width
+                contentHeight: mainColumn.implicitHeight
                 
-                // Статистика
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 60
-                    radius: 12
-                    color: "#FFFFFF"
+                ColumnLayout {
+                    id: mainColumn
+                    width: scrollView.width
+                    spacing: 12
                     
-                    layer.enabled: true
-                    layer.effect: MultiEffect {
-                        shadowEnabled: true
-                        shadowColor: "#000000"
-                        shadowOpacity: 0.1
-                        shadowBlur: 10
-                        shadowVerticalOffset: 2
-                    }
-                    
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 15
+                    // Статистика
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 70
+                        Layout.leftMargin: 20
+                        Layout.rightMargin: 20
+                        Layout.topMargin: 8
+                        radius: 12
+                        color: "#FFFFFF"
                         
-                        // Счетчик правил
-                        Item {
-                            Layout.fillWidth: true
+                        layer.enabled: true
+                        layer.effect: MultiEffect {
+                            shadowEnabled: true
+                            shadowColor: "#000000"
+                            shadowOpacity: 0.1
+                            shadowBlur: 10
+                            shadowVerticalOffset: 2
+                        }
+                        
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 15
+                            spacing: 12
                             
+                            // Формула: входные + выходные = всего переменных
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                
+                                // Входные
+                                ColumnLayout {
+                                    spacing: 2
+                                    Layout.alignment: Qt.AlignVCenter
+                                    
+                                    Text {
+                                        text: inputVarsCount.toString()
+                                        font.pixelSize: 22
+                                        font.weight: Font.Bold
+                                        color: "#6C5CE7"
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                    
+                                    Text {
+                                        text: ruleController.pluralizeInput(inputVarsCount)
+                                        font.pixelSize: 11
+                                        color: "#636E72"
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                }
+                                
+                                Text {
+                                    text: "+"
+                                    font.pixelSize: 20
+                                    font.weight: Font.Bold
+                                    color: "#B0B0B0"
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
+                                
+                                // Выходные
+                                ColumnLayout {
+                                    spacing: 2
+                                    Layout.alignment: Qt.AlignVCenter
+                                    
+                                    Text {
+                                        text: outputVarsCount.toString()
+                                        font.pixelSize: 22
+                                        font.weight: Font.Bold
+                                        color: "#00B894"
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                    
+                                    Text {
+                                        text: ruleController.pluralizeOutput(outputVarsCount)
+                                        font.pixelSize: 11
+                                        color: "#636E72"
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                }
+                                
+                                Text {
+                                    text: "="
+                                    font.pixelSize: 20
+                                    font.weight: Font.Bold
+                                    color: "#B0B0B0"
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
+                                
+                                // Всего переменных
+                                ColumnLayout {
+                                    spacing: 2
+                                    Layout.alignment: Qt.AlignVCenter
+                                    
+                                    Text {
+                                        text: totalVarsCount.toString()
+                                        font.pixelSize: 22
+                                        font.weight: Font.Bold
+                                        color: "#6C5CE7"
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                    
+                                    Text {
+                                        text: ruleController.pluralizeVariables(totalVarsCount)
+                                        font.pixelSize: 11
+                                        color: "#636E72"
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                }
+                            }
+                            
+                            // Разделитель
+                            Rectangle {
+                                width: 2
+                                height: 45
+                                color: "#E8E8E8"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            
+                            // Правила
                             ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 4
+                                spacing: 2
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.leftMargin: 8
                                 
                                 Text {
                                     text: rulesModel.length.toString()
-                                    font.pixelSize: 24
+                                    font.pixelSize: 22
                                     font.weight: Font.Bold
                                     color: "#6C5CE7"
+                                    Layout.alignment: Qt.AlignHCenter
                                 }
                                 
                                 Text {
                                     text: ruleController.pluralizeRules(rulesModel.length)
-                                    font.pixelSize: 14
+                                    font.pixelSize: 11
                                     color: "#636E72"
+                                    Layout.alignment: Qt.AlignHCenter
                                 }
                             }
-                        }
-                        
-                        Rectangle {
-                            width: 1
-                            height: 30
-                            color: "#E0E0E0"
-                        }
-                        
-                        // Кнопка расчета
-                        Button {
-                            text: "▶ Выполнить расчет"
-                            Layout.rightMargin: 15
                             
-                            topPadding: 10
-                            bottomPadding: 10
-                            leftPadding: 20
-                            rightPadding: 20
+                            Item { Layout.fillWidth: true }
                             
-                            background: Rectangle {
-                                radius: 8
-                                color: parent.hovered ? "#5A4BD1" : "#6C5CE7"
+                            // Кнопка расчета
+                            Button {
+                                text: "▶ Выполнить расчет"
                                 
-                                layer.enabled: true
-                                layer.effect: MultiEffect {
-                                    shadowEnabled: true
-                                    shadowColor: "#6C5CE7"
-                                    shadowOpacity: 0.3
-                                    shadowBlur: 8
-                                    shadowVerticalOffset: 3
+                                topPadding: 8
+                                bottomPadding: 8
+                                leftPadding: 16
+                                rightPadding: 16
+                                
+                                background: Rectangle {
+                                    radius: 8
+                                    color: parent.hovered ? "#5A4BD1" : "#6C5CE7"
+                                    
+                                    layer.enabled: true
+                                    layer.effect: MultiEffect {
+                                        shadowEnabled: true
+                                        shadowColor: "#6C5CE7"
+                                        shadowOpacity: 0.3
+                                        shadowBlur: 8
+                                        shadowVerticalOffset: 3
+                                    }
+                                }
+                                
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 13
+                                    font.weight: Font.Medium
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                
+                                onClicked: {
+                                    if (inputVarsCount === 0) {
+                                        ruleController.errorOccurred("Добавьте хотя бы одну входную переменную")
+                                        return
+                                    }
+                                    if (outputVarsCount === 0) {
+                                        ruleController.errorOccurred("Добавьте хотя бы одну выходную переменную")
+                                        return
+                                    }
+                                    if (rulesModel.length === 0) {
+                                        ruleController.errorOccurred("Добавьте хотя бы одно правило")
+                                        return
+                                    }
+                                    ruleController.evaluate()
                                 }
                             }
-                            
-                            contentItem: Text {
-                                text: parent.text
-                                color: "#FFFFFF"
-                                font.pixelSize: 14
-                                font.weight: Font.Medium
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            
-                            onClicked: ruleController.evaluate()
                         }
                     }
-                }
-                
-                // Секция правил
-                ScrollView {
-                    id: scrollView
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    clip: true
-                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                    
-                    ColumnLayout {
-                        id: rulesContainer
-                        spacing: 12
-                        width: scrollView.width
+                               
+                    // Секция "Лингвистические переменные"
+                    CollapsibleSection {
+                        id: variablesSection
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 20
+                        Layout.rightMargin: 20
+                        Layout.topMargin: 8
+                        title: "📊 Лингвистические переменные"
+                        collapsed: false
                         
+                        Repeater {
+                            model: variablesModel
+                            delegate: LinguisticVariableItem {
+                                varId: modelData.id
+                                varName: modelData.name
+                                varType: modelData.type
+                                terms: modelData.terms
+                                Layout.fillWidth: true
+                                
+                                onVariableRemoved: (varId) => {
+                                    ruleController.removeLinguisticVariable(varId)
+                                }
+                                onVariableChanged: (varId, name, type) => {
+                                    ruleController.updateLinguisticVariable(varId, name, type)
+                                }
+                            }
+                        }
+                        
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 10
+                            
+                            TextField {
+                                id: newVarName
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 36
+                                placeholderText: "Название переменной"
+                                font.pixelSize: 14
+                                
+                                background: Rectangle {
+                                    radius: 6
+                                    color: "#FFFFFF"
+                                    border.color: "#E0E0E0"
+                                    border.width: 1
+                                }
+                            }
+                            
+                            ComboBox {
+                                id: newVarType
+                                model: ["входная", "выходная"]
+                                currentIndex: 0
+                                Layout.preferredWidth: 120
+                                Layout.preferredHeight: 36
+                                implicitHeight: 36
+                                
+                                background: Rectangle {
+                                    radius: 6
+                                    color: parent.hovered ? "#F5F5F5" : "#FFFFFF"
+                                    border.color: "#E0E0E0"
+                                    border.width: 1
+                                }
+                                
+                                contentItem: Text {
+                                    text: parent.displayText
+                                    color: "#2D3436"
+                                    font.pixelSize: 14
+                                    verticalAlignment: Text.AlignVCenter
+                                    leftPadding: 12
+                                }
+                            }
+                            
+                            Button {
+                                text: "Добавить"
+                                enabled: newVarName.text.length > 0
+                                Layout.preferredHeight: 36
+                                
+                                topPadding: 8
+                                bottomPadding: 8
+                                leftPadding: 16
+                                rightPadding: 16
+                                
+                                background: Rectangle {
+                                    radius: 8
+                                    color: parent.enabled ? (parent.hovered ? "#5A4BD1" : "#6C5CE7") : "#E0E0E0"
+                                }
+                                
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 14
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                
+                                onClicked: {
+                                    ruleController.addLinguisticVariable(newVarName.text, newVarType.currentText)
+                                    newVarName.text = ""
+                                    updateVariableModels()
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Секция "Правила"
+                    CollapsibleSection {
+                        id: rulesSection
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 20
+                        Layout.rightMargin: 20
+                        Layout.topMargin: 8
+                        title: "📝 Правила"
+                        collapsed: true
+                        
+                        // Правила
                         Repeater {
                             id: rulesRepeater
                             model: rulesModel
@@ -255,6 +482,8 @@ ApplicationWindow {
                                 ruleId: modelData.id
                                 conditions: modelData.conditions
                                 conclusions: modelData.conclusions
+                                inputVariables: inputVariablesModel
+                                outputVariables: outputVariablesModel
                                 Layout.fillWidth: true
                                 
                                 onConditionAdded: (ruleId, group) => {
@@ -263,8 +492,8 @@ ApplicationWindow {
                                 onConditionRemoved: (ruleId, group, index) => {
                                     ruleController.removeCondition(ruleId, group, index)
                                 }
-                                onVariableChanged: (ruleId, group, index, variable) => {
-                                    ruleController.updateConditionVariable(ruleId, group, index, variable)
+                                onVariableChanged: (ruleId, group, index, variableId, term) => {
+                                    ruleController.updateConditionVariable(ruleId, group, index, variableId, term)
                                 }
                                 onOperatorChanged: (ruleId, group, index, operator) => {
                                     ruleController.updateConditionOperator(ruleId, group, index, operator)
@@ -276,36 +505,45 @@ ApplicationWindow {
                         }
                         
                         // Кнопка добавления правила
-                        Button {
-                            text: "+ Добавить правило"
-                            enabled: rulesModel.length < 10
-                            Layout.alignment: Qt.AlignCenter
-                            Layout.topMargin: 5
-                            Layout.bottomMargin: 20
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 56  // Высота кнопки + отступы
                             
-                            topPadding: 12
-                            bottomPadding: 12
-                            leftPadding: 24
-                            rightPadding: 24
-                            
-                            background: Rectangle {
-                                radius: 8
-                                color: parent.enabled ? (parent.hovered ? "#E8F5E9" : "#F0F0F0") : "#F5F5F5"
-                                border.color: parent.enabled ? "#00B894" : "#E0E0E0"
-                                border.width: 2
+                            Button {
+                                text: "+ Добавить правило"
+                                enabled: rulesModel.length < 10
+                                anchors.centerIn: parent
+                                
+                                topPadding: 12
+                                bottomPadding: 12
+                                leftPadding: 24
+                                rightPadding: 24
+                                
+                                background: Rectangle {
+                                    radius: 8
+                                    color: parent.enabled ? (parent.hovered ? "#E8F5E9" : "#F0F0F0") : "#F5F5F5"
+                                    border.color: parent.enabled ? "#00B894" : "#E0E0E0"
+                                    border.width: 2
+                                }
+                                
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: parent.enabled ? "#00B894" : "#B0B0B0"
+                                    font.pixelSize: 14
+                                    font.weight: Font.Medium
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                
+                                onClicked: ruleController.addRule()
                             }
-                            
-                            contentItem: Text {
-                                text: parent.text
-                                color: parent.enabled ? "#00B894" : "#B0B0B0"
-                                font.pixelSize: 14
-                                font.weight: Font.Medium
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            
-                            onClicked: ruleController.addRule()
                         }
+                    }
+                    
+                    // Отступ снизу
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 20
                     }
                 }
             }
@@ -317,6 +555,11 @@ ApplicationWindow {
         
         function onRulesChanged(rules) {
             rulesModel = rules
+        }
+        
+        function onVariablesChanged(variables) {
+            variablesModel = variables
+            updateVariableModels()
         }
         
         function onErrorOccurred(message) {

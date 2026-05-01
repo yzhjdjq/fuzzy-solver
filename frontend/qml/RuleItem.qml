@@ -10,10 +10,12 @@ Item {
     property int ruleId: 0
     property var conditions: ([])
     property var conclusions: ([])
+    property var inputVariables: ([])
+    property var outputVariables: ([])
     
     signal conditionAdded(int ruleId, string group)
     signal conditionRemoved(int ruleId, string group, int index)
-    signal variableChanged(int ruleId, string group, int index, string variable)
+    signal variableChanged(int ruleId, string group, int index, int variableId, string term)
     signal operatorChanged(int ruleId, string group, int index, string operator)
     signal ruleRemoved(int ruleId)
     
@@ -25,7 +27,6 @@ Item {
         radius: 12
         color: "#FFFFFF"
         
-        // Тень
         layer.enabled: true
         layer.effect: MultiEffect {
             shadowEnabled: true
@@ -35,7 +36,6 @@ Item {
             shadowVerticalOffset: 3
         }
         
-        // Цветная полоса слева
         Rectangle {
             width: 4
             height: parent.height - 20
@@ -58,7 +58,6 @@ Item {
         anchors.margins: 25
         spacing: 15
         
-        // Заголовок правила с номером
         Rectangle {
             Layout.preferredWidth: 36
             Layout.preferredHeight: 36
@@ -74,7 +73,6 @@ Item {
             }
         }
         
-        // Секция "Если"
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 8
@@ -109,7 +107,9 @@ Item {
                         delegate: ConditionDelegate {
                             conditionIndex: model.index
                             groupType: "condition"
-                            currentVariable: modelData.variable
+                            variablesModel: root.inputVariables
+                            currentVariableId: modelData.variable_id
+                            currentTerm: modelData.term
                             currentOperator: modelData.operator
                             isLast: model.index === conditions.length - 1
                             showRemove: conditions.length > 1
@@ -118,8 +118,8 @@ Item {
                             Layout.topMargin: 2
                             Layout.bottomMargin: 2
                             
-                            onVariableChanged: (ruleId, group, index, variable) => {
-                                root.variableChanged(root.ruleId, group, index, variable)
+                            onVariableChanged: (ruleId, group, index, variableId, term) => {
+                                root.variableChanged(root.ruleId, group, index, variableId, term)
                             }
                             onOperatorChanged: (ruleId, group, index, operator) => {
                                 root.operatorChanged(root.ruleId, group, index, operator)
@@ -136,7 +136,6 @@ Item {
             }
         }
         
-        // Стрелка
         Rectangle {
             Layout.preferredWidth: 30
             Layout.preferredHeight: 30
@@ -152,7 +151,6 @@ Item {
             }
         }
         
-        // Секция "То"
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 8
@@ -187,7 +185,9 @@ Item {
                         delegate: ConditionDelegate {
                             conditionIndex: model.index
                             groupType: "conclusion"
-                            currentVariable: modelData.variable
+                            variablesModel: root.outputVariables
+                            currentVariableId: modelData.variable_id
+                            currentTerm: modelData.term
                             currentOperator: modelData.operator
                             isLast: model.index === conclusions.length - 1
                             showRemove: conclusions.length > 1
@@ -196,8 +196,8 @@ Item {
                             Layout.topMargin: 2
                             Layout.bottomMargin: 2
                             
-                            onVariableChanged: (ruleId, group, index, variable) => {
-                                root.variableChanged(root.ruleId, group, index, variable)
+                            onVariableChanged: (ruleId, group, index, variableId, term) => {
+                                root.variableChanged(root.ruleId, group, index, variableId, term)
                             }
                             onOperatorChanged: (ruleId, group, index, operator) => {
                                 root.operatorChanged(root.ruleId, group, index, operator)
@@ -214,7 +214,6 @@ Item {
             }
         }
         
-        // Кнопка удаления правила
         Button {
             id: deleteButton
             text: "✕"
@@ -222,11 +221,6 @@ Item {
             Layout.alignment: Qt.AlignVCenter
             Layout.preferredWidth: 36
             Layout.preferredHeight: 36
-            
-            topPadding: 6
-            bottomPadding: 6
-            leftPadding: 10
-            rightPadding: 10
             
             background: Rectangle {
                 radius: 8
