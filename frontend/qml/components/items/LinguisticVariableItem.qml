@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../../theme"
 
 Item {
     id: root
@@ -21,8 +22,8 @@ Item {
     
     Rectangle {
         anchors.fill: parent
-        radius: 8
-        color: "#F8F9FA"
+        radius: Theme.radiusSmall
+        color: Theme.background
         border.color: varType === "входная" ? "#E8E8FF" : "#E8FFE8"
         border.width: 1
     }
@@ -33,13 +34,12 @@ Item {
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.margins: 10
-        spacing: 8
+        spacing: Theme.radiusSmall
         
         RowLayout {
             Layout.fillWidth: true
             spacing: 10
             
-            // Тип переменной (индикатор)
             Rectangle {
                 Layout.preferredWidth: 24
                 Layout.preferredHeight: 24
@@ -49,23 +49,22 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: varType === "входная" ? "↓" : "↑"
-                    font.pixelSize: 12
-                    color: varType === "входная" ? "#6C5CE7" : "#00B894"
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: varType === "входная" ? Theme.primary : Theme.success
                 }
             }
             
-            // Название переменной
             TextField {
                 id: nameField
                 text: varName
                 Layout.fillWidth: true
                 Layout.preferredHeight: 36
-                font.pixelSize: 14
+                font.pixelSize: Theme.fontSizeNormal
                 
                 background: Rectangle {
                     radius: 6
-                    color: "#FFFFFF"
-                    border.color: "#E0E0E0"
+                    color: Theme.surface
+                    border.color: Theme.border
                     border.width: 1
                 }
                 
@@ -76,7 +75,6 @@ Item {
                 }
             }
             
-            // Тип переменной
             ComboBox {
                 id: typeCombo
                 model: ["входная", "выходная"]
@@ -87,15 +85,15 @@ Item {
                 
                 background: Rectangle {
                     radius: 6
-                    color: parent.hovered ? "#F5F5F5" : "#FFFFFF"
-                    border.color: "#E0E0E0"
+                    color: parent.hovered ? "#F5F5F5" : Theme.surface
+                    border.color: Theme.border
                     border.width: 1
                 }
                 
                 contentItem: Text {
                     text: parent.displayText
-                    color: "#2D3436"
-                    font.pixelSize: 14
+                    color: Theme.textPrimary
+                    font.pixelSize: Theme.fontSizeNormal
                     verticalAlignment: Text.AlignVCenter
                     leftPadding: 12
                 }
@@ -107,7 +105,6 @@ Item {
                 }
             }
             
-            // Кнопка удаления
             Button {
                 text: "✕"
                 onClicked: root.variableRemoved(varId)
@@ -115,18 +112,18 @@ Item {
                 Layout.preferredHeight: 36
                 
                 background: Rectangle {
-                    radius: 8
+                    radius: Theme.radiusSmall
                     color: parent.hovered ? "#FFE5E5" : "transparent"
                     
                     Behavior on color {
-                        ColorAnimation { duration: 200 }
+                        ColorAnimation { duration: Theme.animationFast }
                     }
                 }
                 
                 contentItem: Text {
                     text: parent.text
-                    color: parent.hovered ? "#FF7675" : "#B0B0B0"
-                    font.pixelSize: 14
+                    color: parent.hovered ? Theme.error : "#B0B0B0"
+                    font.pixelSize: Theme.fontSizeNormal
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }

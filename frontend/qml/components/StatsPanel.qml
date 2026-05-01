@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Effects
+import "../theme"
 
 Item {
     id: root
@@ -18,9 +19,9 @@ Item {
     
     Rectangle {
         anchors.fill: parent
-        radius: 12
-        color: "#FAFBFC"
-        border.color: "#E8E8E8"
+        radius: Theme.radiusMedium
+        color: Theme.surface
+        border.color: Theme.border
         
         layer.enabled: true
         layer.effect: MultiEffect {
@@ -36,17 +37,16 @@ Item {
         anchors.fill: parent
         anchors.leftMargin: 15
         anchors.rightMargin: 15
-        spacing: 12
+        spacing: Theme.radiusMedium
         
-        // Формула: входные + выходные = всего переменных
         RowLayout {
             Layout.fillWidth: true
-            spacing: 8
+            spacing: Theme.radiusSmall
             
             StatItem {
                 value: inputVarsCount
                 label: ruleController.pluralizeInput(inputVarsCount)
-                valueColor: "#6C5CE7"
+                valueColor: Theme.primary
             }
             
             OperatorText { text: "+" }
@@ -54,7 +54,7 @@ Item {
             StatItem {
                 value: outputVarsCount
                 label: ruleController.pluralizeOutput(outputVarsCount)
-                valueColor: "#00B894"
+                valueColor: Theme.success
             }
             
             OperatorText { text: "=" }
@@ -62,30 +62,60 @@ Item {
             StatItem {
                 value: totalVarsCount
                 label: ruleController.pluralizeVariables(totalVarsCount)
-                valueColor: "#6C5CE7"
+                valueColor: Theme.primary
             }
         }
         
-        Separator {}
+        Rectangle {
+            width: 2; height: 45
+            color: Theme.border
+            Layout.alignment: Qt.AlignVCenter
+        }
         
         StatItem {
             value: rulesCount
             label: ruleController.pluralizeRules(rulesCount)
-            valueColor: "#6C5CE7"
+            valueColor: Theme.primary
         }
         
         Item { Layout.fillWidth: true }
         
-        CalculateButton {
+        Button {
+            text: "▶ Выполнить расчет"
+            
+            topPadding: 8; bottomPadding: 8
+            leftPadding: 16; rightPadding: 16
+            
+            background: Rectangle {
+                radius: Theme.radiusSmall
+                color: parent.hovered ? Theme.primaryDark : Theme.primary
+                
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    shadowEnabled: true
+                    shadowColor: Theme.primary
+                    shadowOpacity: 0.3
+                    shadowBlur: 8
+                    shadowVerticalOffset: 3
+                }
+            }
+            
+            contentItem: Text {
+                text: parent.text
+                color: Theme.textOnPrimary
+                font.pixelSize: 13; font.weight: Font.Medium
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+            
             onClicked: root.calculateClicked()
         }
     }
     
-    // Вложенные компоненты
     component StatItem: ColumnLayout {
         property int value: 0
         property string label: ""
-        property color valueColor: "#6C5CE7"
+        property color valueColor: Theme.primary
         
         spacing: 2
         Layout.alignment: Qt.AlignVCenter
@@ -98,7 +128,7 @@ Item {
         }
         Text {
             text: label
-            font.pixelSize: 11; color: "#636E72"
+            font.pixelSize: Theme.fontSizeSmall; color: Theme.textSecondary
             Layout.alignment: Qt.AlignHCenter
         }
     }
@@ -108,40 +138,5 @@ Item {
         font.pixelSize: 20; font.weight: Font.Bold
         color: "#B0B0B0"
         Layout.alignment: Qt.AlignVCenter
-    }
-    
-    component Separator: Rectangle {
-        width: 2; height: 45
-        color: "#E8E8E8"
-        Layout.alignment: Qt.AlignVCenter
-    }
-    
-    component CalculateButton: Button {
-        text: "▶ Выполнить расчет"
-        
-        topPadding: 8; bottomPadding: 8
-        leftPadding: 16; rightPadding: 16
-        
-        background: Rectangle {
-            radius: 8
-            color: parent.hovered ? "#5A4BD1" : "#6C5CE7"
-            
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                shadowEnabled: true
-                shadowColor: "#6C5CE7"
-                shadowOpacity: 0.3
-                shadowBlur: 8
-                shadowVerticalOffset: 3
-            }
-        }
-        
-        contentItem: Text {
-            text: parent.text
-            color: "#FFFFFF"
-            font.pixelSize: 13; font.weight: Font.Medium
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
     }
 }

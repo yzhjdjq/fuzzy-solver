@@ -1,7 +1,9 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "."
 import "items"
+import "../theme"
 
 CollapsibleSection {
     id: root
@@ -57,16 +59,16 @@ CollapsibleSection {
             leftPadding: 24; rightPadding: 24
             
             background: Rectangle {
-                radius: 8
+                radius: Theme.radiusSmall
                 color: parent.enabled ? (parent.hovered ? "#E8F5E9" : "#F0F0F0") : "#F5F5F5"
-                border.color: parent.enabled ? "#00B894" : "#E0E0E0"
+                border.color: parent.enabled ? Theme.success : Theme.border
                 border.width: 2
             }
             
             contentItem: Text {
                 text: parent.text
-                color: parent.enabled ? "#00B894" : "#B0B0B0"
-                font.pixelSize: 14; font.weight: Font.Medium
+                color: parent.enabled ? Theme.success : "#B0B0B0"
+                font.pixelSize: Theme.fontSizeNormal; font.weight: Font.Medium
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }

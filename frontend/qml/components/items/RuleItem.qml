@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Effects
 import "../delegates"
+import "../../theme"
 
 Item {
     id: root
@@ -24,8 +25,8 @@ Item {
     
     Rectangle {
         anchors.fill: parent
-        radius: 12
-        color: "#FFFFFF"
+        radius: Theme.radiusMedium
+        color: Theme.surface
         
         layer.enabled: true
         layer.effect: MultiEffect {
@@ -44,8 +45,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             radius: 2
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "#6C5CE7" }
-                GradientStop { position: 1.0; color: "#A29BFE" }
+                GradientStop { position: 0.0; color: Theme.primary }
+                GradientStop { position: 1.0; color: Theme.primaryLight }
             }
         }
     }
@@ -67,22 +68,22 @@ Item {
             Text {
                 anchors.centerIn: parent
                 text: (ruleId + 1).toString()
-                font.pixelSize: 14
+                font.pixelSize: Theme.fontSizeNormal
                 font.weight: Font.Bold
-                color: "#6C5CE7"
+                color: Theme.primary
             }
         }
         
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 8
+            spacing: Theme.radiusSmall
             
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: conditionContent.implicitHeight + 24
                 radius: 10
-                color: "#F8F9FA"
-                border.color: "#E8E8E8"
+                color: Theme.background
+                border.color: Theme.border
                 border.width: 1
                 
                 ColumnLayout {
@@ -90,14 +91,14 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.top: parent.top
-                    anchors.margins: 12
-                    spacing: 8
+                    anchors.margins: Theme.radiusMedium
+                    spacing: Theme.radiusSmall
                     
                     Text {
                         text: "ЕСЛИ"
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSizeNormal
                         font.weight: Font.Bold
-                        color: "#6C5CE7"
+                        color: Theme.primary
                         Layout.leftMargin: 5
                         Layout.bottomMargin: 4
                     }
@@ -145,15 +146,15 @@ Item {
             Text {
                 anchors.centerIn: parent
                 text: "→"
-                font.pixelSize: 16
-                color: "#6C5CE7"
+                font.pixelSize: Theme.fontSizeLarge
+                color: Theme.primary
                 font.weight: Font.Bold
             }
         }
         
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 8
+            spacing: Theme.radiusSmall
             
             Rectangle {
                 Layout.fillWidth: true
@@ -168,14 +169,14 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.top: parent.top
-                    anchors.margins: 12
-                    spacing: 8
+                    anchors.margins: Theme.radiusMedium
+                    spacing: Theme.radiusSmall
                     
                     Text {
                         text: "ТО"
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSizeNormal
                         font.weight: Font.Bold
-                        color: "#00B894"
+                        color: Theme.success
                         Layout.leftMargin: 5
                         Layout.bottomMargin: 4
                     }
@@ -223,23 +224,23 @@ Item {
             Layout.preferredHeight: 36
             
             background: Rectangle {
-                radius: 8
+                radius: Theme.radiusSmall
                 color: deleteButton.hovered ? "#FFE5E5" : "transparent"
                 
                 Behavior on color {
-                    ColorAnimation { duration: 200 }
+                    ColorAnimation { duration: Theme.animationFast }
                 }
             }
             
             contentItem: Text {
                 text: deleteButton.text
-                color: deleteButton.hovered ? "#FF7675" : "#B0B0B0"
-                font.pixelSize: 14
+                color: deleteButton.hovered ? Theme.error : "#B0B0B0"
+                font.pixelSize: Theme.fontSizeNormal
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 
                 Behavior on color {
-                    ColorAnimation { duration: 200 }
+                    ColorAnimation { duration: Theme.animationFast }
                 }
             }
             
@@ -249,14 +250,14 @@ Item {
                 delay: 500
                 
                 background: Rectangle {
-                    color: "#FF7675"
+                    color: Theme.error
                     radius: 6
                 }
                 
                 contentItem: Text {
                     text: "Удалить правило"
-                    color: "#FFFFFF"
-                    font.pixelSize: 14
+                    color: Theme.textOnPrimary
+                    font.pixelSize: Theme.fontSizeNormal
                 }
             }
         }

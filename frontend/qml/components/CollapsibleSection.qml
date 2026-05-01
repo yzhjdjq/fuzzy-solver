@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../theme"
 
 Item {
     id: root
@@ -17,18 +18,17 @@ Item {
         id: mainContainer
         width: parent.width
         height: collapsed ? 48 : 48 + divider.height + contentLayout.implicitHeight + 24
-        radius: 10
-        color: "#FAFBFC"
-        border.color: "#E8E8E8"
+        radius: Theme.radiusMedium
+        color: Theme.surface
+        border.color: Theme.border
         border.width: 1
         clip: true
         
         Behavior on height {
             NumberAnimation { 
-                duration: 250
+                duration: Theme.animationNormal
                 easing.type: Easing.InOutQuad
                 onRunningChanged: {
-                    // Когда анимация завершилась и раздел свернут - скрываем контент
                     if (!running && root.collapsed) {
                         contentContainer.visible = false
                         divider.visible = false
@@ -41,21 +41,20 @@ Item {
             anchors.fill: parent
             spacing: 0
             
-            // Заголовок
             Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 48
-                Layout.leftMargin: 12
-                Layout.rightMargin: 12
+                Layout.leftMargin: Theme.radiusMedium
+                Layout.rightMargin: Theme.radiusMedium
                 
                 RowLayout {
                     anchors.fill: parent
                     
                     Text {
                         text: root.title
-                        font.pixelSize: 16
+                        font.pixelSize: Theme.fontSizeLarge
                         font.weight: Font.Bold
-                        color: "#2D3436"
+                        color: Theme.textPrimary
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
                     }
@@ -67,25 +66,24 @@ Item {
                         Layout.preferredHeight: 36
                         
                         background: Rectangle {
-                            radius: 8
+                            radius: Theme.radiusSmall
                             color: collapseButton.hovered ? "#F0EDFF" : "transparent"
                             
                             Behavior on color {
-                                ColorAnimation { duration: 200 }
+                                ColorAnimation { duration: Theme.animationFast }
                             }
                         }
                         
                         contentItem: Text {
                             text: collapseButton.text
-                            color: "#6C5CE7"
-                            font.pixelSize: 14
+                            color: Theme.primary
+                            font.pixelSize: Theme.fontSizeNormal
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                         }
                         
                         onClicked: {
                             if (root.collapsed) {
-                                // При раскрытии: сначала показываем контент
                                 contentContainer.visible = true
                                 divider.visible = true
                             }
@@ -95,16 +93,14 @@ Item {
                 }
             }
             
-            // Разделительная линия
             Rectangle {
                 id: divider
                 Layout.fillWidth: true
                 height: collapsed ? 0 : 1
                 visible: !collapsed
-                color: "#E8E8E8"
+                color: Theme.border
             }
             
-            // Содержимое
             Item {
                 id: contentContainer
                 Layout.fillWidth: true
@@ -113,17 +109,17 @@ Item {
                 clip: true
                 
                 Behavior on Layout.preferredHeight {
-                    NumberAnimation { duration: 250; easing.type: Easing.InOutQuad }
+                    NumberAnimation { duration: Theme.animationNormal; easing.type: Easing.InOutQuad }
                 }
                 
                 ColumnLayout {
                     id: contentLayout
                     anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
-                    anchors.topMargin: 12
-                    anchors.bottomMargin: 12
-                    spacing: 8
+                    anchors.leftMargin: Theme.radiusMedium
+                    anchors.rightMargin: Theme.radiusMedium
+                    anchors.topMargin: Theme.radiusMedium
+                    anchors.bottomMargin: Theme.radiusMedium
+                    spacing: Theme.radiusSmall
                 }
             }
         }

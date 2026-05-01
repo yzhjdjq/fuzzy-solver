@@ -9,7 +9,7 @@ ApplicationWindow {
     visible: true
     width: 800; height: 600
     title: "Решатель 0.1.0"
-    color: "#F8F9FA"
+    color: Theme.background
     
     minimumWidth: 620; minimumHeight: 450
     
@@ -50,7 +50,7 @@ ApplicationWindow {
                 ColumnLayout {
                     id: mainColumn
                     width: scrollView.width
-                    spacing: 8
+                    spacing: Theme.radiusSmall
                     
                     StatsPanel {
                         inputVarsCount: inputVariablesModel.length

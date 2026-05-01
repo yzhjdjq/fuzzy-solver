@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Effects
+import "../theme"
 
 Dialog {
     id: root
@@ -15,8 +16,8 @@ Dialog {
     y: (parent.height - height) / 2
     
     background: Rectangle {
-        radius: 12
-        color: "#FFFFFF"
+        radius: Theme.radiusMedium
+        color: Theme.surface
         
         layer.enabled: true
         layer.effect: MultiEffect {
@@ -48,8 +49,8 @@ Dialog {
             text: ""
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
-            color: "#FF7675"
-            font.pixelSize: 14
+            color: Theme.error
+            font.pixelSize: Theme.fontSizeNormal
             horizontalAlignment: Text.AlignHCenter
         }
     }

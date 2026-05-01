@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../../theme"
 
 Item {
     id: delegateRoot
@@ -26,7 +27,7 @@ Item {
     
     RowLayout {
         anchors.fill: parent
-        spacing: 8
+        spacing: Theme.radiusSmall
         
         ComboBox {
             id: variableCombo
@@ -48,15 +49,15 @@ Item {
             
             background: Rectangle {
                 radius: 6
-                color: parent.hovered ? "#F5F5F5" : "#FFFFFF"
-                border.color: "#E0E0E0"
+                color: parent.hovered ? "#F5F5F5" : Theme.surface
+                border.color: Theme.border
                 border.width: 1
             }
             
             contentItem: Text {
                 text: parent.displayText
-                color: "#2D3436"
-                font.pixelSize: 14
+                color: Theme.textPrimary
+                font.pixelSize: Theme.fontSizeNormal
                 verticalAlignment: Text.AlignVCenter
                 leftPadding: 12
                 rightPadding: 12
@@ -85,15 +86,15 @@ Item {
             
             background: Rectangle {
                 radius: 6
-                color: parent.hovered ? "#F0EDFF" : "#FFFFFF"
-                border.color: "#E0E0E0"
+                color: parent.hovered ? "#F0EDFF" : Theme.surface
+                border.color: Theme.border
                 border.width: 1
             }
             
             contentItem: Text {
                 text: parent.displayText
-                color: "#6C5CE7"
-                font.pixelSize: 14
+                color: Theme.primary
+                font.pixelSize: Theme.fontSizeNormal
                 font.weight: Font.Medium
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
@@ -116,18 +117,18 @@ Item {
             Layout.preferredHeight: 36
             
             background: Rectangle {
-                radius: 8
+                radius: Theme.radiusSmall
                 color: parent.hovered ? "#FFE5E5" : "transparent"
                 
                 Behavior on color {
-                    ColorAnimation { duration: 200 }
+                    ColorAnimation { duration: Theme.animationFast }
                 }
             }
             
             contentItem: Text {
                 text: parent.text
-                color: parent.hovered ? "#FF7675" : "#B0B0B0"
-                font.pixelSize: 14
+                color: parent.hovered ? Theme.error : "#B0B0B0"
+                font.pixelSize: Theme.fontSizeNormal
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -141,18 +142,18 @@ Item {
             Layout.preferredHeight: 36
             
             background: Rectangle {
-                radius: 8
+                radius: Theme.radiusSmall
                 color: parent.hovered ? "#E8F5E9" : "#F0F0F0"
                 
                 Behavior on color {
-                    ColorAnimation { duration: 200 }
+                    ColorAnimation { duration: Theme.animationFast }
                 }
             }
             
             contentItem: Text {
                 text: parent.text
-                color: parent.hovered ? "#00B894" : "#636E72"
-                font.pixelSize: 16
+                color: parent.hovered ? Theme.success : Theme.textSecondary
+                font.pixelSize: Theme.fontSizeLarge
                 font.weight: Font.Bold
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter

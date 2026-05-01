@@ -1,7 +1,9 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "."
 import "items"
+import "../theme"
 
 CollapsibleSection {
     id: root
@@ -40,12 +42,12 @@ CollapsibleSection {
             Layout.fillWidth: true
             Layout.preferredHeight: 36
             placeholderText: "Название переменной"
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontSizeNormal
             
             background: Rectangle {
                 radius: 6
-                color: "#FFFFFF"
-                border.color: "#E0E0E0"
+                color: Theme.surface
+                border.color: Theme.border
                 border.width: 1
             }
         }
@@ -60,15 +62,15 @@ CollapsibleSection {
             
             background: Rectangle {
                 radius: 6
-                color: parent.hovered ? "#F5F5F5" : "#FFFFFF"
-                border.color: "#E0E0E0"
+                color: parent.hovered ? "#F5F5F5" : Theme.surface
+                border.color: Theme.border
                 border.width: 1
             }
             
             contentItem: Text {
                 text: parent.displayText
-                color: "#2D3436"
-                font.pixelSize: 14
+                color: Theme.textPrimary
+                font.pixelSize: Theme.fontSizeNormal
                 verticalAlignment: Text.AlignVCenter
                 leftPadding: 12
             }
@@ -83,14 +85,14 @@ CollapsibleSection {
             leftPadding: 16; rightPadding: 16
             
             background: Rectangle {
-                radius: 8
-                color: parent.enabled ? (parent.hovered ? "#5A4BD1" : "#6C5CE7") : "#E0E0E0"
+                radius: Theme.radiusSmall
+                color: parent.enabled ? (parent.hovered ? Theme.primaryDark : Theme.primary) : Theme.border
             }
             
             contentItem: Text {
                 text: parent.text
-                color: "#FFFFFF"
-                font.pixelSize: 14
+                color: Theme.textOnPrimary
+                font.pixelSize: Theme.fontSizeNormal
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
