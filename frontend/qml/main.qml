@@ -7,11 +7,11 @@ import "theme"
 ApplicationWindow {
     id: mainWindow
     visible: true
-    width: 800; height: 600
+    width: 950; height: 600
+    minimumWidth: 950; minimumHeight: 450
     title: "Решатель 0.1.0"
     color: Theme.background
     
-    minimumWidth: 620; minimumHeight: 450
     
     property var rulesModel: []
     property var variablesModel: []
@@ -93,6 +93,17 @@ ApplicationWindow {
                         }
                         onVariableRemoved: (varId) => ruleController.removeLinguisticVariable(varId)
                         onVariableChanged: (varId, name, type) => ruleController.updateLinguisticVariable(varId, name, type)
+                    }
+                    
+                    TermsSection {
+                        id: termsSection
+                        variablesModel: mainWindow.variablesModel
+                        Layout.leftMargin: 20
+                        Layout.rightMargin: 20
+                        
+                        onTermAdded: (varId, termName) => ruleController.addTerm(varId, termName)
+                        onTermRemoved: (varId, termIndex) => ruleController.removeTerm(varId, termIndex)
+                        onTermChanged: (varId, termIndex, termName) => ruleController.updateTerm(varId, termIndex, termName)
                     }
                     
                     RulesSection {

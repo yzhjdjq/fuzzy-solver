@@ -107,10 +107,10 @@ class RuleController(QObject):
             result.append({
                 "id": var.id,
                 "name": var.name,
-                "terms": [t.name for t in var.terms]
+                "terms": [{"name": t.name} for t in var.terms]
             })
         return result
-    
+
     @Slot(result=list)
     def getOutputVariables(self):
         """Получить выходные переменные для QML"""
@@ -119,7 +119,7 @@ class RuleController(QObject):
             result.append({
                 "id": var.id,
                 "name": var.name,
-                "terms": [t.name for t in var.terms]
+                "terms": [{"name": t.name} for t in var.terms]
             })
         return result
     
@@ -358,3 +358,42 @@ class RuleController(QObject):
             return word.inflect({'plur', 'nomn'}).word  # правила
         else:
             return word.inflect({'plur', 'gent'}).word  # правил
+
+    @Slot(int, str)
+    def addTerm(self, var_id: int, term_name: str):
+        """Добавить терм в лингвистическую переменную"""
+        try:
+            var = self.engine.get_variable_by_id(var_id)
+            if var:
+                if len(var.terms) >= 10:
+                    self.errorOccurred.emit("Максимум 10 термов")
+                    return
+                var.terms.append(FuzzyTerm(name=term_name))
+                self._update_variables_model()
+        except Exception as e:
+            self.errorOccurred.emit(f"Ошибка при добавлении терма: {str(e)}")
+
+    @Slot(int, int)
+    def removeTerm(self, var_id: int, term_index: int):
+        """Удалить терм из лингвистической переменной"""
+        try:
+            var = self.engine.get_variable_by_id(var_id)
+            if var:
+                if len(var.terms) <= 1:
+                    self.errorOccurred.emit("Должен быть минимум один терм")
+                    return
+                var.terms.pop(term_index)
+                self._update_variables_model()
+        except Exception as e:
+            self.errorOccurred.emit(f"Ошибка при удалении терма: {str(e)}")
+
+    @Slot(int, int, str)
+    def updateTerm(self, var_id: int, term_index: int, term_name: str):
+        """Обновить название терма"""
+        try:
+            var = self.engine.get_variable_by_id(var_id)
+            if var and 0 <= term_index < len(var.terms):
+                var.terms[term_index].name = term_name
+                self._update_variables_model()
+        except Exception as e:
+            self.errorOccurred.emit(f"Ошибка при обновлении терма: {str(e)}")

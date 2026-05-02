@@ -1,9 +1,9 @@
+// frontend/qml/components/RulesSection.qml
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import "."
-import "items"
 import "../theme"
+import "items"
 
 CollapsibleSection {
     id: root
@@ -48,21 +48,26 @@ CollapsibleSection {
     
     Item {
         Layout.fillWidth: true
-        Layout.preferredHeight: 56
+        Layout.preferredHeight: addRuleButton.height
         
         Button {
+            id: addRuleButton
             text: "+ Добавить правило"
             enabled: root.rulesModel.length < 10
             anchors.centerIn: parent
-            
+
             topPadding: 12; bottomPadding: 12
             leftPadding: 24; rightPadding: 24
             
             background: Rectangle {
                 radius: Theme.radiusSmall
                 color: parent.enabled ? (parent.hovered ? "#E8F5E9" : "#F0F0F0") : "#F5F5F5"
-                border.color: parent.enabled ? Theme.success : Theme.border
-                border.width: 2
+                border.color: {
+                    if (addRuleButton.activeFocus) return Theme.accent
+                    if (parent.enabled) return Theme.success
+                    return Theme.border
+                }
+                border.width: addRuleButton.activeFocus ? 2 : parent.enabled ? 2 : 1
             }
             
             contentItem: Text {
@@ -74,6 +79,13 @@ CollapsibleSection {
             }
             
             onClicked: root.ruleAdded()
+            
+            Keys.onReturnPressed: {
+                if (enabled) root.ruleAdded()
+            }
+            Keys.onEnterPressed: {
+                if (enabled) root.ruleAdded()
+            }
         }
     }
 }

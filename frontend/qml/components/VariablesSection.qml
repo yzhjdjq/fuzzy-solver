@@ -47,8 +47,19 @@ CollapsibleSection {
             background: Rectangle {
                 radius: 6
                 color: Theme.surface
-                border.color: Theme.border
-                border.width: 1
+                border.color: newVarName.activeFocus ? Theme.primary : Theme.border
+                border.width: newVarName.activeFocus ? 2 : 1
+            }
+            
+            Keys.onReturnPressed: {
+                if (text.length > 0) {
+                    addVariable()
+                }
+            }
+            Keys.onEnterPressed: {
+                if (text.length > 0) {
+                    addVariable()
+                }
             }
         }
         
@@ -63,8 +74,8 @@ CollapsibleSection {
             background: Rectangle {
                 radius: 6
                 color: parent.hovered ? "#F5F5F5" : Theme.surface
-                border.color: Theme.border
-                border.width: 1
+                border.color: newVarType.activeFocus ? Theme.primary : Theme.border
+                border.width: newVarType.activeFocus ? 2 : 1
             }
             
             contentItem: Text {
@@ -77,6 +88,7 @@ CollapsibleSection {
         }
         
         Button {
+            id: addVarButton
             text: "Добавить"
             enabled: newVarName.text.length > 0
             Layout.preferredHeight: 36
@@ -87,6 +99,8 @@ CollapsibleSection {
             background: Rectangle {
                 radius: Theme.radiusSmall
                 color: parent.enabled ? (parent.hovered ? Theme.primaryDark : Theme.primary) : Theme.border
+                border.color: addVarButton.activeFocus ? Theme.accent : "transparent"
+                border.width: addVarButton.activeFocus ? 2 : 0
             }
             
             contentItem: Text {
@@ -97,10 +111,26 @@ CollapsibleSection {
                 verticalAlignment: Text.AlignVCenter
             }
             
-            onClicked: {
-                root.variableAdded(newVarName.text, newVarType.currentText)
-                newVarName.text = ""
+            onClicked: addVariable()
+            
+            Keys.onReturnPressed: {
+                if (enabled) addVariable()
+            }
+            Keys.onEnterPressed: {
+                if (enabled) addVariable()
             }
         }
+    }
+    
+    function addVariable() {
+        if (newVarName.text.length > 0) {
+            root.variableAdded(newVarName.text, newVarType.currentText)
+            newVarName.text = ""
+            newVarName.focus = true
+        }
+    }
+    
+    Component.onCompleted: {
+        newVarName.focus = true
     }
 }

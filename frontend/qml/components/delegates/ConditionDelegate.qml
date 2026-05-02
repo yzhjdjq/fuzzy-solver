@@ -9,7 +9,6 @@ Item {
     property int conditionIndex: 0
     property string groupType: ""
     property var variablesModel: []
-    property var termsModel: []
     property int currentVariableId: 0
     property string currentTerm: ""
     property string currentOperator: "и"
@@ -25,10 +24,21 @@ Item {
     implicitHeight: 36
     implicitWidth: 200
     
+    // Получаем список термов для выбранной переменной
+    property var currentTerms: {
+        for (var i = 0; i < variablesModel.length; i++) {
+            if (variablesModel[i].id === currentVariableId) {
+                return variablesModel[i].terms || []
+            }
+        }
+        return []
+    }
+    
     RowLayout {
         anchors.fill: parent
-        spacing: Theme.radiusSmall
+        spacing: 8
         
+        // Комбобокс переменной
         ComboBox {
             id: variableCombo
             model: variablesModel
@@ -39,7 +49,7 @@ Item {
                 for (var i = 0; i < variablesModel.length; i++) {
                     if (variablesModel[i].id === currentVariableId) return i
                 }
-                return 0
+                return variablesModel.length > 0 ? 0 : -1
             }
             
             Layout.fillWidth: true
@@ -68,8 +78,59 @@ Item {
             onCurrentIndexChanged: {
                 if (currentIndex >= 0 && variablesModel[currentIndex]) {
                     var varId = variablesModel[currentIndex].id
-                    var term = termsModel.length > 0 ? termsModel[0] : ""
+                    // При смене переменной выбираем первый терм
+                    var terms = variablesModel[currentIndex].terms || []
+                    var term = terms.length > 0 ? terms[0] : ""
                     delegateRoot.variableChanged(-1, groupType, conditionIndex, varId, term)
+                }
+            }
+        }
+        
+        // Комбобокс терма
+        ComboBox {
+            id: termCombo
+            model: delegateRoot.currentTerms
+            textRole: "name"
+            
+            currentIndex: {
+                var terms = delegateRoot.currentTerms
+                for (var i = 0; i < terms.length; i++) {
+                    if (terms[i].name === currentTerm) return i
+                }
+                return terms.length > 0 ? 0 : -1
+            }
+            
+            Layout.fillWidth: true
+            Layout.minimumWidth: 80
+            Layout.preferredHeight: 36
+            implicitHeight: 36
+            visible: delegateRoot.currentTerms.length > 0
+            
+            background: Rectangle {
+                radius: 6
+                color: parent.hovered ? "#F5F5F5" : Theme.surface
+                border.color: termCombo.activeFocus ? Theme.primary : Theme.border
+                border.width: termCombo.activeFocus ? 2 : 1
+            }
+            
+            contentItem: Text {
+                text: parent.displayText
+                color: Theme.textPrimary
+                font.pixelSize: Theme.fontSizeNormal
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: 12
+                rightPadding: 12
+                elide: Text.ElideRight
+                clip: true
+            }
+            
+            onCurrentTextChanged: {
+                if (currentText !== currentTerm && currentText !== "") {
+                    // При смене терма обновляем условие
+                    var varId = variableCombo.currentIndex >= 0 && variablesModel[variableCombo.currentIndex] 
+                        ? variablesModel[variableCombo.currentIndex].id 
+                        : currentVariableId
+                    delegateRoot.variableChanged(-1, groupType, conditionIndex, varId, currentText)
                 }
             }
         }

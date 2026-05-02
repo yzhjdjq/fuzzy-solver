@@ -20,8 +20,8 @@ Item {
     signal operatorChanged(int ruleId, string group, int index, string operator)
     signal ruleRemoved(int ruleId)
     
-    implicitHeight: ruleContent.height + 30
-    implicitWidth: parent ? parent.width : 400
+    implicitHeight: ruleContent.height
+    implicitWidth: parent ? parent.width : 900
     
     Rectangle {
         anchors.fill: parent
@@ -41,7 +41,6 @@ Item {
             width: 4
             height: parent.height - 20
             anchors.left: parent.left
-            anchors.leftMargin: 10
             anchors.verticalCenter: parent.verticalCenter
             radius: 2
             gradient: Gradient {
@@ -56,8 +55,8 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        anchors.margins: 25
-        spacing: 15
+        anchors.leftMargin: Theme.radiusLarge
+        spacing: Theme.radiusMedium
         
         Rectangle {
             Layout.preferredWidth: 36
