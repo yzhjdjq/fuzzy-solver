@@ -110,6 +110,8 @@ ApplicationWindow {
                         onTermAdded: (varId, termName) => ruleController.addTerm(varId, termName)
                         onTermRemoved: (varId, termIndex) => ruleController.removeTerm(varId, termIndex)
                         onTermChanged: (varId, termIndex, termName) => ruleController.updateTerm(varId, termIndex, termName)
+                        onTermMfTypeChanged: (varId, termIndex, mfType) => ruleController.updateMfType(varId, termIndex, mfType)
+                        onTermMfParamsChanged: (varId, termIndex, params) => ruleController.updateMfParams(varId, termIndex, params)
                     }
                     
                     RulesSection {

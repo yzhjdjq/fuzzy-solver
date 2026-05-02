@@ -8,18 +8,21 @@ CollapsibleSection {
     id: root
     
     property var variablesModel: []
+    property int focusVarId: -1
+    property var collapsedStates: ({})
+    property var mfTypeStates: ({})
+    property var mfParamsStates: ({})
     
     signal termAdded(int varId, string termName)
     signal termRemoved(int varId, int termIndex)
     signal termChanged(int varId, int termIndex, string termName)
+    signal termMfTypeChanged(int varId, int termIndex, string mfType)
+    signal termMfParamsChanged(int varId, int termIndex, var params)
     
     Layout.fillWidth: true
     
     title: "📋 Термы лингвистических переменных"
     collapsed: false
-    
-    property int focusVarId: -1
-    property var collapsedStates: ({})
     
     ColumnLayout {
         Layout.fillWidth: true
@@ -42,12 +45,25 @@ CollapsibleSection {
                     }
                 }
                 
+                function getSavedMfType(termIndex, defaultType) {
+                    if (root.mfTypeStates[varId] && root.mfTypeStates[varId][termIndex] !== undefined) {
+                        return root.mfTypeStates[varId][termIndex]
+                    }
+                    return defaultType
+                }
+                
+                function getSavedMfParams(termIndex, defaultParams) {
+                    if (root.mfParamsStates[varId] && root.mfParamsStates[varId][termIndex] !== undefined) {
+                        return root.mfParamsStates[varId][termIndex]
+                    }
+                    return defaultParams
+                }
+                
                 CollapsibleSection {
                     id: varSection
                     anchors.fill: parent
                     title: modelData.name + " (" + modelData.type + ")"
                     
-                    // Восстанавливаем состояние из хранилища или используем false по умолчанию
                     collapsed: {
                         if (root.collapsedStates[delegateRoot.varId] !== undefined) {
                             return root.collapsedStates[delegateRoot.varId]
@@ -55,7 +71,6 @@ CollapsibleSection {
                         return false
                     }
                     
-                    // Сохраняем состояние при изменении
                     onCollapsedChanged: {
                         root.collapsedStates[delegateRoot.varId] = collapsed
                     }
@@ -69,6 +84,8 @@ CollapsibleSection {
                             delegate: TermItem {
                                 termIndex: model.index
                                 termName: modelData.name
+                                mfType: delegateRoot.getSavedMfType(model.index, modelData.mf_type || "trapezoid")
+                                mfParams: delegateRoot.getSavedMfParams(model.index, modelData.mf_params || [0.0, 0.25, 0.75, 1.0])
                                 Layout.fillWidth: true
                                 
                                 onTermChanged: (index, name) => {
@@ -76,6 +93,20 @@ CollapsibleSection {
                                 }
                                 onTermRemoved: (index) => {
                                     root.termRemoved(delegateRoot.varId, index)
+                                }
+                                onTermMfTypeChanged: (index, mfType) => {
+                                    if (!root.mfTypeStates[delegateRoot.varId]) {
+                                        root.mfTypeStates[delegateRoot.varId] = {}
+                                    }
+                                    root.mfTypeStates[delegateRoot.varId][index] = mfType
+                                    root.termMfTypeChanged(delegateRoot.varId, index, mfType)
+                                }
+                                onTermMfParamsChanged: (index, params) => {
+                                    if (!root.mfParamsStates[delegateRoot.varId]) {
+                                        root.mfParamsStates[delegateRoot.varId] = {}
+                                    }
+                                    root.mfParamsStates[delegateRoot.varId][index] = params.slice()
+                                    root.termMfParamsChanged(delegateRoot.varId, index, params)
                                 }
                             }
                         }

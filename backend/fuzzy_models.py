@@ -12,9 +12,8 @@ class VariableType(str, Enum):
 
 class FuzzyTerm(BaseModel):
     name: str
-    # Функция принадлежности может быть добавлена позже
-    # type: str  # треугольная, трапециевидная, гауссова и т.д.
-    # params: List[float]  # параметры функции
+    mf_type: str = 'trapezoid'
+    mf_params: list[float] = [0.0, 0.25, 0.75, 1.0]
 
 class LinguisticVariable(BaseModel):
     id: int

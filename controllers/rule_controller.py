@@ -78,7 +78,7 @@ class RuleController(QObject):
                 "id": var.id,
                 "name": var.name,
                 "type": var.type.value,
-                "terms": [{"name": t.name} for t in var.terms]
+                "terms": [{"name": t.name, "mf_type": t.mf_type, "mf_params": t.mf_params} for t in var.terms]
             })
         self._variables = variables_dict
         self.variablesChanged.emit(self._variables)
@@ -408,3 +408,25 @@ class RuleController(QObject):
                 rule.weight = weight
         except Exception as e:
             self.errorOccurred.emit(f"Ошибка при обновлении веса правила: {str(e)}")
+
+    @Slot(int, int, str)
+    def updateMfType(self, var_id: int, term_index: int, mf_type: str):
+        """Обновить тип функции принадлежности"""
+        try:
+            var = self.engine.get_variable_by_id(var_id)
+            if var and 0 <= term_index < len(var.terms):
+                var.terms[term_index].mf_type = mf_type
+                self._update_variables_model()
+        except Exception as e:
+            self.errorOccurred.emit(f"Ошибка при обновлении типа функции: {str(e)}")
+
+    @Slot(int, int, list)
+    def updateMfParams(self, var_id: int, term_index: int, params):
+        """Обновить параметры функции принадлежности"""
+        try:
+            var = self.engine.get_variable_by_id(var_id)
+            if var and 0 <= term_index < len(var.terms):
+                var.terms[term_index].mf_params = [float(p) for p in params]
+                self._update_variables_model()
+        except Exception as e:
+            self.errorOccurred.emit(f"Ошибка при обновлении параметров функции: {str(e)}")
