@@ -86,6 +86,7 @@ ApplicationWindow {
                                 return
                             }
                             ruleController.evaluate()
+                            graphsSection.graphsGenerated = true
                         }
                     }
                     
@@ -128,6 +129,13 @@ ApplicationWindow {
                         onOperatorChanged: (ruleId, group, index, operator) => 
                             ruleController.updateConditionOperator(ruleId, group, index, operator)
                         onWeightChanged: (ruleId, weight) => ruleController.updateRuleWeight(ruleId, weight)
+                    }
+
+                    GraphsSection {
+                        id: graphsSection
+                        variablesModel: mainWindow.variablesModel
+                        Layout.leftMargin: 20
+                        Layout.rightMargin: 20
                     }
                     
                     Item { Layout.fillWidth: true; Layout.preferredHeight: 20 }
