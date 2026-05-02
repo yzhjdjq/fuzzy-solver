@@ -12,7 +12,6 @@ ApplicationWindow {
     title: "Решатель 0.1.0"
     color: Theme.background
     
-    
     property var rulesModel: []
     property var variablesModel: []
     property var inputVariablesModel: []
@@ -22,11 +21,20 @@ ApplicationWindow {
         rulesModel = ruleController.rules
         variablesModel = ruleController.variables
         updateVariableModels()
+        updateAllModels()
     }
     
     function updateVariableModels() {
         inputVariablesModel = ruleController.getInputVariables()
         outputVariablesModel = ruleController.getOutputVariables()
+    }
+    
+    function updateAllModels() {
+        rulesSection.rulesModel = rulesModel
+        rulesSection.inputVariablesModel = inputVariablesModel
+        rulesSection.outputVariablesModel = outputVariablesModel
+        variablesSection.variablesModel = variablesModel
+        termsSection.variablesModel = variablesModel
     }
     
     ColumnLayout {
@@ -83,7 +91,6 @@ ApplicationWindow {
                     
                     VariablesSection {
                         id: variablesSection
-                        variablesModel: mainWindow.variablesModel
                         Layout.leftMargin: 20
                         Layout.rightMargin: 20
                         
@@ -97,7 +104,6 @@ ApplicationWindow {
                     
                     TermsSection {
                         id: termsSection
-                        variablesModel: mainWindow.variablesModel
                         Layout.leftMargin: 20
                         Layout.rightMargin: 20
                         
@@ -108,9 +114,6 @@ ApplicationWindow {
                     
                     RulesSection {
                         id: rulesSection
-                        rulesModel: mainWindow.rulesModel
-                        inputVariablesModel: mainWindow.inputVariablesModel
-                        outputVariablesModel: mainWindow.outputVariablesModel
                         Layout.leftMargin: 20
                         Layout.rightMargin: 20
                         
@@ -133,10 +136,14 @@ ApplicationWindow {
     Connections {
         target: ruleController
         
-        function onRulesChanged(rules) { rulesModel = rules }
+        function onRulesChanged(rules) { 
+            rulesModel = rules
+            updateAllModels()
+        }
         function onVariablesChanged(variables) {
             variablesModel = variables
             updateVariableModels()
+            updateAllModels()
         }
         function onErrorOccurred(message) {
             errorDialog.errorText = message

@@ -48,14 +48,15 @@ Item {
                 border.width: termField.activeFocus ? 2 : 1
             }
             
-            onTextChanged: {
+            // Сохраняем изменения только при потере фокуса или Enter
+            onEditingFinished: {
                 if (text !== termName) {
                     root.termChanged(termIndex, text)
                 }
             }
             
             Keys.onReturnPressed: {
-                focus = false
+                focus = false  // Потеря фокуса вызовет onEditingFinished
             }
             Keys.onEnterPressed: {
                 focus = false

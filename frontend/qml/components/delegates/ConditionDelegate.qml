@@ -24,33 +24,61 @@ Item {
     implicitHeight: 36
     implicitWidth: 200
     
-    // Получаем список термов для выбранной переменной
-    property var currentTerms: {
+    // Термы текущей переменной - обновляются через функцию
+    property var currentTerms: []
+    
+    // Функция обновления списка термов
+    function updateTerms() {
+        var terms = []
         for (var i = 0; i < variablesModel.length; i++) {
             if (variablesModel[i].id === currentVariableId) {
-                return variablesModel[i].terms || []
+                terms = variablesModel[i].terms || []
+                break
             }
         }
-        return []
+        currentTerms = terms
+        
+        // Обновляем индекс терма
+        var termIndex = -1
+        for (var j = 0; j < terms.length; j++) {
+            if (terms[j].name === currentTerm) {
+                termIndex = j
+                break
+            }
+        }
+        if (termIndex >= 0) {
+            termCombo.currentIndex = termIndex
+        } else if (terms.length > 0) {
+            termCombo.currentIndex = 0
+        }
     }
+    
+    // Функция поиска индекса переменной
+    function findVariableIndex() {
+        for (var i = 0; i < variablesModel.length; i++) {
+            if (variablesModel[i].id === currentVariableId) return i
+        }
+        return variablesModel.length > 0 ? 0 : -1
+    }
+    
+    // Обновляем термы при изменении переменной или модели
+    onVariablesModelChanged: updateTerms()
+    onCurrentVariableIdChanged: updateTerms()
+    onCurrentTermChanged: updateTerms()
+    
+    Component.onCompleted: updateTerms()
     
     RowLayout {
         anchors.fill: parent
         spacing: 8
         
-        // Комбобокс переменной
         ComboBox {
             id: variableCombo
             model: variablesModel
             textRole: "name"
             valueRole: "id"
             
-            currentIndex: {
-                for (var i = 0; i < variablesModel.length; i++) {
-                    if (variablesModel[i].id === currentVariableId) return i
-                }
-                return variablesModel.length > 0 ? 0 : -1
-            }
+            currentIndex: findVariableIndex()
             
             Layout.fillWidth: true
             Layout.minimumWidth: 120
@@ -60,8 +88,8 @@ Item {
             background: Rectangle {
                 radius: 6
                 color: parent.hovered ? "#F5F5F5" : Theme.surface
-                border.color: Theme.border
-                border.width: 1
+                border.color: variableCombo.activeFocus ? Theme.primary : Theme.border
+                border.width: variableCombo.activeFocus ? 2 : 1
             }
             
             contentItem: Text {
@@ -75,36 +103,26 @@ Item {
                 clip: true
             }
             
-            onCurrentIndexChanged: {
+            onActivated: {
                 if (currentIndex >= 0 && variablesModel[currentIndex]) {
                     var varId = variablesModel[currentIndex].id
-                    // При смене переменной выбираем первый терм
                     var terms = variablesModel[currentIndex].terms || []
-                    var term = terms.length > 0 ? terms[0] : ""
+                    var term = terms.length > 0 ? terms[0].name : ""
                     delegateRoot.variableChanged(-1, groupType, conditionIndex, varId, term)
                 }
             }
         }
         
-        // Комбобокс терма
         ComboBox {
             id: termCombo
-            model: delegateRoot.currentTerms
+            model: currentTerms
             textRole: "name"
-            
-            currentIndex: {
-                var terms = delegateRoot.currentTerms
-                for (var i = 0; i < terms.length; i++) {
-                    if (terms[i].name === currentTerm) return i
-                }
-                return terms.length > 0 ? 0 : -1
-            }
             
             Layout.fillWidth: true
             Layout.minimumWidth: 80
             Layout.preferredHeight: 36
             implicitHeight: 36
-            visible: delegateRoot.currentTerms.length > 0
+            visible: currentTerms.length > 0
             
             background: Rectangle {
                 radius: 6
@@ -124,14 +142,11 @@ Item {
                 clip: true
             }
             
-            onCurrentTextChanged: {
-                if (currentText !== currentTerm && currentText !== "") {
-                    // При смене терма обновляем условие
-                    var varId = variableCombo.currentIndex >= 0 && variablesModel[variableCombo.currentIndex] 
-                        ? variablesModel[variableCombo.currentIndex].id 
-                        : currentVariableId
-                    delegateRoot.variableChanged(-1, groupType, conditionIndex, varId, currentText)
-                }
+            onActivated: {
+                var varId = variableCombo.currentIndex >= 0 && variablesModel[variableCombo.currentIndex] 
+                    ? variablesModel[variableCombo.currentIndex].id 
+                    : currentVariableId
+                delegateRoot.variableChanged(-1, groupType, conditionIndex, varId, currentText)
             }
         }
         
@@ -148,8 +163,8 @@ Item {
             background: Rectangle {
                 radius: 6
                 color: parent.hovered ? "#F0EDFF" : Theme.surface
-                border.color: Theme.border
-                border.width: 1
+                border.color: operatorCombo.activeFocus ? Theme.primary : Theme.border
+                border.width: operatorCombo.activeFocus ? 2 : 1
             }
             
             contentItem: Text {
@@ -163,10 +178,8 @@ Item {
                 rightPadding: 8
             }
             
-            onCurrentTextChanged: {
-                if (currentText !== currentOperator) {
-                    delegateRoot.operatorChanged(-1, groupType, conditionIndex, currentText)
-                }
+            onActivated: {
+                delegateRoot.operatorChanged(-1, groupType, conditionIndex, currentText)
             }
         }
         
@@ -180,6 +193,8 @@ Item {
             background: Rectangle {
                 radius: Theme.radiusSmall
                 color: parent.hovered ? "#FFE5E5" : "transparent"
+                border.color: parent.activeFocus ? Theme.primary : "transparent"
+                border.width: parent.activeFocus ? 2 : 0
                 
                 Behavior on color {
                     ColorAnimation { duration: Theme.animationFast }
@@ -205,6 +220,8 @@ Item {
             background: Rectangle {
                 radius: Theme.radiusSmall
                 color: parent.hovered ? "#E8F5E9" : "#F0F0F0"
+                border.color: parent.activeFocus ? Theme.primary : "transparent"
+                border.width: parent.activeFocus ? 2 : 0
                 
                 Behavior on color {
                     ColorAnimation { duration: Theme.animationFast }

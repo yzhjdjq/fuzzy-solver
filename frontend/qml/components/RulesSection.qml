@@ -1,4 +1,3 @@
-// frontend/qml/components/RulesSection.qml
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
@@ -48,14 +47,14 @@ CollapsibleSection {
     
     Item {
         Layout.fillWidth: true
-        Layout.preferredHeight: addRuleButton.height
+        Layout.preferredHeight: 56
         
         Button {
             id: addRuleButton
             text: "+ Добавить правило"
             enabled: root.rulesModel.length < 10
             anchors.centerIn: parent
-
+            
             topPadding: 12; bottomPadding: 12
             leftPadding: 24; rightPadding: 24
             
