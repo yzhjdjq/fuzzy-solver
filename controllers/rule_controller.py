@@ -61,10 +61,11 @@ class RuleController(QObject):
         for rule in self.engine.rule_set.rules:
             rules_dict.append({
                 "id": rule.id,
+                "weight": rule.weight,
                 "conditions": [{"variable_id": c.variable_id, "term": c.term, "operator": c.operator.value} 
-                             for c in rule.conditions],
+                            for c in rule.conditions],
                 "conclusions": [{"variable_id": c.variable_id, "term": c.term, "operator": c.operator.value} 
-                              for c in rule.conclusions]
+                            for c in rule.conclusions]
             })
         self._rules = rules_dict
         self.rulesChanged.emit(self._rules)
@@ -397,3 +398,13 @@ class RuleController(QObject):
                 self._update_variables_model()
         except Exception as e:
             self.errorOccurred.emit(f"Ошибка при обновлении терма: {str(e)}")
+
+    @Slot(int, float)
+    def updateRuleWeight(self, rule_id: int, weight: float):
+        """Обновить весовой коэффициент правила"""
+        try:
+            rule = next((r for r in self.engine.rule_set.rules if r.id == rule_id), None)
+            if rule:
+                rule.weight = weight
+        except Exception as e:
+            self.errorOccurred.emit(f"Ошибка при обновлении веса правила: {str(e)}")

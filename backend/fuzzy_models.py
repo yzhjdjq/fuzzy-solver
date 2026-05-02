@@ -35,9 +35,16 @@ class Condition(BaseModel):
 
 class Rule(BaseModel):
     id: int
+    weight: float = 1.0
     conditions: List[Condition] = Field(default=[Condition()])
     conclusions: List[Condition] = Field(default=[Condition()])
     
+    @validator('weight')
+    def check_weight(cls, v):
+        if v < 0.0 or v > 1.0:
+            raise ValueError('Вес должен быть от 0.0 до 1.0')
+        return v
+
     @validator('conditions', 'conclusions')
     def check_size(cls, v):
         if not v or len(v) < 1:

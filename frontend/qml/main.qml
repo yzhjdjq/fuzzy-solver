@@ -125,6 +125,7 @@ ApplicationWindow {
                             ruleController.updateConditionVariable(ruleId, group, index, variableId, term)
                         onOperatorChanged: (ruleId, group, index, operator) => 
                             ruleController.updateConditionOperator(ruleId, group, index, operator)
+                        onWeightChanged: (ruleId, weight) => ruleController.updateRuleWeight(ruleId, weight)
                     }
                     
                     Item { Layout.fillWidth: true; Layout.preferredHeight: 20 }

@@ -17,6 +17,7 @@ CollapsibleSection {
     signal conditionRemoved(int ruleId, string group, int index)
     signal variableChanged(int ruleId, string group, int index, int variableId, string term)
     signal operatorChanged(int ruleId, string group, int index, string operator)
+    signal weightChanged(int ruleId, double weight)
     
     Layout.fillWidth: true
     
@@ -42,6 +43,7 @@ CollapsibleSection {
             onOperatorChanged: (ruleId, group, index, operator) => 
                 root.operatorChanged(ruleId, group, index, operator)
             onRuleRemoved: (ruleId) => root.ruleRemoved(ruleId)
+            onRuleWeightChanged: (ruleId, weight) => root.weightChanged(ruleId, weight)
         }
     }
     
