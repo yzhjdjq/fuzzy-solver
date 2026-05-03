@@ -131,6 +131,27 @@ ApplicationWindow {
                         onWeightChanged: (ruleId, weight) => ruleController.updateRuleWeight(ruleId, weight)
                     }
 
+                    SolverConditions {
+                        id: solverSection
+                        inputVariablesModel: mainWindow.inputVariablesModel
+                        defuzzMethod: "bos"
+                        Layout.leftMargin: 20
+                        Layout.rightMargin: 20
+                        
+                        onInputValueChanged: (varId, value) => {
+                            ruleController.setInputValue(varId, value)
+                        }
+                        onInputVariableRemoved: (varId) => {
+                            ruleController.removeInputValue(varId)
+                        }
+                        onInputVariableAdded: (varId) => {
+                            ruleController.addInputValue(varId, 0.0)
+                        }
+                        onDefuzzMethodSelected: (method) => {
+                            ruleController.setDefuzzMethod(method)
+                        }
+                    }
+
                     GraphsSection {
                         id: graphsSection
                         variablesModel: mainWindow.variablesModel

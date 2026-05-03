@@ -30,6 +30,8 @@ class RuleController(QObject):
         self.engine = RuleEngine()
         self._rules = []
         self._variables = []
+        self._input_values = {}
+        self._defuzz_method = "bos"
         self._initialize_default_data()
     
     def _initialize_default_data(self):
@@ -108,7 +110,7 @@ class RuleController(QObject):
             result.append({
                 "id": var.id,
                 "name": var.name,
-                "terms": [{"name": t.name} for t in var.terms]
+                "terms": [{"name": t.name, "mf_type": t.mf_type, "mf_params": t.mf_params} for t in var.terms]
             })
         return result
 
@@ -120,7 +122,7 @@ class RuleController(QObject):
             result.append({
                 "id": var.id,
                 "name": var.name,
-                "terms": [{"name": t.name} for t in var.terms]
+                "terms": [{"name": t.name, "mf_type": t.mf_type, "mf_params": t.mf_params} for t in var.terms]
             })
         return result
     
@@ -244,12 +246,6 @@ class RuleController(QObject):
         except Exception as e:
             self.errorOccurred.emit(f"Ошибка при обновлении переменной: {str(e)}")
     
-    @Slot()
-    def evaluate(self):
-        """Выполнить расчет"""
-        json_data = self.engine.to_json()
-        print("Текущие правила и переменные:", json_data)
-    
     @Property(list, notify=rulesChanged)
     def rules(self):
         return self._rules
@@ -287,9 +283,16 @@ class RuleController(QObject):
                 if not var or var.type != VariableType.OUTPUT:
                     self.errorOccurred.emit(f"Правило {rule.id + 1}: заключение использует несуществующую или не выходную переменную")
                     return
+
+        # Проверка входных значений
+        if len(self._input_values) == 0:
+            self.errorOccurred.emit("Добавьте хотя бы одно входное значение")
+            return
         
         json_data = self.engine.to_json()
         print("Текущие правила и переменные:", json_data)
+        print("Входные значения:", self._input_values)
+        print("Метод дефаззификации:", self._defuzz_method)
         # Здесь будет вызов нечеткого вывода
 
     @Slot(int, result=str)
@@ -430,3 +433,24 @@ class RuleController(QObject):
                 self._update_variables_model()
         except Exception as e:
             self.errorOccurred.emit(f"Ошибка при обновлении параметров функции: {str(e)}")
+
+    @Slot(int, float)
+    def addInputValue(self, var_id: int, value: float):
+        """Добавить входное значение"""
+        self._input_values[var_id] = value
+
+    @Slot(int, float)
+    def setInputValue(self, var_id: int, value: float):
+        """Установить входное значение"""
+        self._input_values[var_id] = value
+
+    @Slot(int)
+    def removeInputValue(self, var_id: int):
+        """Удалить входное значение"""
+        if var_id in self._input_values:
+            del self._input_values[var_id]
+
+    @Slot(str)
+    def setDefuzzMethod(self, method: str):
+        """Установить метод дефаззификации"""
+        self._defuzz_method = method
