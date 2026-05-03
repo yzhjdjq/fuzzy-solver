@@ -32,28 +32,6 @@ class RuleController(QObject):
         self._variables = []
         self._input_values = {}
         self._defuzz_method = "bos"
-        self._initialize_default_data()
-    
-    def _initialize_default_data(self):
-        """Инициализация тестовыми данными"""
-        # Добавляем тестовое правило
-        input_vars = self.engine.get_input_variables()
-        output_vars = self.engine.get_output_variables()
-        
-        test_rule = Rule(
-            id=0,
-            conditions=[Condition(
-                variable_id=input_vars[0].id if input_vars else 0,
-                term=input_vars[0].terms[0].name if input_vars and input_vars[0].terms else "",
-                operator=LogicalOperator.AND
-            )],
-            conclusions=[Condition(
-                variable_id=output_vars[0].id if output_vars else 0,
-                term=output_vars[0].terms[0].name if output_vars and output_vars[0].terms else "",
-                operator=LogicalOperator.AND
-            )]
-        )
-        self.engine.rule_set.rules.append(test_rule)
         self._update_rules_model()
         self._update_variables_model()
     

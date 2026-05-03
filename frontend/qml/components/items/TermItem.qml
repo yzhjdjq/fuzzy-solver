@@ -174,7 +174,7 @@ Item {
                 
                 TextField {
                     id: param1
-                    Layout.preferredWidth: 45
+                    Layout.preferredWidth: 80
                     Layout.preferredHeight: 32
                     font.pixelSize: Theme.fontSizeNormal
                     horizontalAlignment: Text.AlignHCenter
@@ -192,7 +192,7 @@ Item {
                 
                 TextField {
                     id: param2
-                    Layout.preferredWidth: 45
+                    Layout.preferredWidth: 80
                     Layout.preferredHeight: 32
                     font.pixelSize: Theme.fontSizeNormal
                     horizontalAlignment: Text.AlignHCenter
@@ -210,7 +210,7 @@ Item {
                 
                 TextField {
                     id: param3
-                    Layout.preferredWidth: 45
+                    Layout.preferredWidth: 80
                     Layout.preferredHeight: 32
                     font.pixelSize: Theme.fontSizeNormal
                     horizontalAlignment: Text.AlignHCenter
@@ -229,7 +229,7 @@ Item {
                 
                 TextField {
                     id: param4
-                    Layout.preferredWidth: 45
+                    Layout.preferredWidth: 80
                     Layout.preferredHeight: 32
                     font.pixelSize: Theme.fontSizeNormal
                     horizontalAlignment: Text.AlignHCenter
@@ -339,14 +339,14 @@ Item {
     function saveParams() {
         var params = [];
         params.push(parseFloat(param1.text) || 0.0);
-        params.push(parseFloat(param2.text) || 0.25);
+        params.push(parseFloat(param2.text) || 0.0);
         
         if (root.localMfType !== "gaussian") {
-            params.push(parseFloat(param3.text) || 0.75);
+            params.push(parseFloat(param3.text) || 0.0);
         }
         
         if (root.localMfType === "trapezoid") {
-            params.push(parseFloat(param4.text) || 1.0);
+            params.push(parseFloat(param4.text) || 0.0);
         }
         
         root.localMfParams = params;

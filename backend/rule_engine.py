@@ -1,7 +1,7 @@
 from typing import Any
 import json
 import math
-from .fuzzy_models import RuleSet, Rule, Condition, LinguisticVariable, VariableType, FuzzyTerm
+from .fuzzy_models import RuleSet, Rule, Condition, LogicalOperator, LinguisticVariable, VariableType, FuzzyTerm
 
 class RuleEngine:
     def __init__(self):
@@ -14,42 +14,93 @@ class RuleEngine:
         """Инициализация тестовыми лингвистическими переменными"""
         # Входные переменные
         temp_terms = [
-            FuzzyTerm(name="низкая"),
-            FuzzyTerm(name="средняя"),
-            FuzzyTerm(name="высокая")
+            FuzzyTerm(name="низкая", mf_type="triangle", mf_params=[-10.0, -10.0, 13.0]),
+            # FuzzyTerm(name="средняя"),
+            FuzzyTerm(name="высокая", mf_type="triangle", mf_params=[10.0, 45.0, 45.0])
         ]
         temp_var = LinguisticVariable(id=0, name="Температура", type=VariableType.INPUT, terms=temp_terms)
         
         humidity_terms = [
-            FuzzyTerm(name="низкая"),
-            FuzzyTerm(name="средняя"),
-            FuzzyTerm(name="высокая")
+            FuzzyTerm(name="низкая", mf_type="triangle", mf_params=[0.0, 0.0, 75.0]),
+            # FuzzyTerm(name="средняя"),
+            FuzzyTerm(name="высокая", mf_type="triangle", mf_params=[50.0, 100.0, 100.0])
         ]
         humidity_var = LinguisticVariable(id=1, name="Влажность", type=VariableType.INPUT, terms=humidity_terms)
         
-        pressure_terms = [
-            FuzzyTerm(name="низкое"),
-            FuzzyTerm(name="среднее"),
-            FuzzyTerm(name="высокое")
-        ]
-        pressure_var = LinguisticVariable(id=2, name="Давление", type=VariableType.INPUT, terms=pressure_terms)
+        # pressure_terms = [
+        #     FuzzyTerm(name="низкое"),
+        #     FuzzyTerm(name="среднее"),
+        #     FuzzyTerm(name="высокое")
+        # ]
+        # pressure_var = LinguisticVariable(id=2, name="Давление", type=VariableType.INPUT, terms=pressure_terms)
         
         # Выходные переменные
-        power_terms = [
-            FuzzyTerm(name="малая"),
-            FuzzyTerm(name="средняя"),
-            FuzzyTerm(name="большая")
-        ]
-        power_var = LinguisticVariable(id=3, name="Мощность", type=VariableType.OUTPUT, terms=power_terms)
+        # power_terms = [
+        #     FuzzyTerm(name="малая"),
+        #     FuzzyTerm(name="средняя"),
+        #     FuzzyTerm(name="большая")
+        # ]
+        # power_var = LinguisticVariable(id=3, name="Мощность", type=VariableType.OUTPUT, terms=power_terms)
         
         speed_terms = [
-            FuzzyTerm(name="низкая"),
-            FuzzyTerm(name="средняя"),
-            FuzzyTerm(name="высокая")
+            FuzzyTerm(name="низкая", mf_type="triangle", mf_params=[0.0, 0.0, 13.0]),
+            # FuzzyTerm(name="средняя"),
+            FuzzyTerm(name="высокая", mf_type="triangle", mf_params=[10.0, 25.0, 25.0])
         ]
-        speed_var = LinguisticVariable(id=4, name="Скорость", type=VariableType.OUTPUT, terms=speed_terms)
+        speed_var = LinguisticVariable(id=2, name="Скорость", type=VariableType.OUTPUT, terms=speed_terms)
         
-        self.rule_set.linguistic_variables = [temp_var, humidity_var, pressure_var, power_var, speed_var]
+        self.rule_set.linguistic_variables = [temp_var, humidity_var, speed_var] #[temp_var, humidity_var, pressure_var, power_var, speed_var]
+
+        rule1 = Rule(
+            id=0,
+            weight=0.5,
+            conditions=[Condition(
+                variable_id=temp_var.id,    # температура
+                term=temp_var.terms[0].name,    # низкая
+                operator=LogicalOperator.AND
+            )],
+            conclusions=[Condition(
+                variable_id=speed_var.id,   # скорость
+                term=speed_var.terms[1].name,   # высокая
+                operator=LogicalOperator.AND
+            )]
+        )
+        rule2 = Rule(
+            id=1,
+            weight=0.5,
+            conditions=[Condition(
+                variable_id=temp_var.id,    # температура
+                term=temp_var.terms[1].name,    # высокая
+                operator=LogicalOperator.AND
+            )],
+            conclusions=[Condition(
+                variable_id=speed_var.id,   # скорость
+                term=speed_var.terms[0].name,   # низкая
+                operator=LogicalOperator.AND
+            )]
+        )
+        rule3 = Rule(
+            id=2,
+            weight=0.5,
+            conditions=[
+                Condition(
+                    variable_id=temp_var.id,    # температура
+                    term=temp_var.terms[0].name,    # низкая
+                    operator=LogicalOperator.AND    # И
+                ),
+                Condition(
+                    variable_id=humidity_var.id,    # влажность
+                    term=humidity_var.terms[0].name,    # низкая
+                    operator=LogicalOperator.AND
+                )
+            ],
+            conclusions=[Condition(
+                variable_id=speed_var.id,   # скорость
+                term=speed_var.terms[0].name,   # низкая
+                operator=LogicalOperator.AND
+            )]
+        )
+        self.rule_set.rules = [rule1, rule2, rule3]
     
     def get_input_variables(self) -> list[LinguisticVariable]:
         """Получить входные переменные"""
@@ -202,21 +253,85 @@ class RuleEngine:
             result[var_id] = self.fuzzify(var_id, value)
         return result
     
-    def evaluate(self, inputs: dict[str, float]) -> dict[str, float]:
-        """Выполнить нечеткий вывод с фазификацией"""
-        # Конвертируем строковые ключи в int (из QML приходят строки)
-        numeric_inputs = {int(k): v for k, v in inputs.items()}
+    def _aggregate_conditions(self, rule: Rule, fuzzified: dict[int, dict[str, float]]) -> float:
+        """
+        Агрегирование условий правила.
+        Вычисляет результирующую степень истинности условия ЕСЛИ.
+        Для AND: min, для OR: max.
+        """
+        if not rule.conditions:
+            return 0.0
         
+        memberships = []
+        for i, condition in enumerate(rule.conditions):
+            var_id = condition.variable_id
+            term_name = condition.term
+            
+            # Получаем степень принадлежности для условия
+            if var_id in fuzzified and term_name in fuzzified[var_id]:
+                mu = fuzzified[var_id][term_name]
+            else:
+                mu = 0.0
+            
+            memberships.append(mu)
+        
+        # Первое условие задаёт начальное значение
+        result = memberships[0]
+        
+        # Применяем операторы к последующим условиям
+        for i in range(1, len(memberships)):
+            operator = rule.conditions[i - 1].operator  # Оператор связывает i-1 и i условие
+            if operator == LogicalOperator.AND:
+                result = min(result, memberships[i])
+            elif operator == LogicalOperator.OR:
+                result = max(result, memberships[i])
+        
+        return round(result, 4)
+    
+    def evaluate(self, inputs: dict[int, float]) -> dict[str, float]:
+        """Выполнить нечеткий вывод"""
         # Шаг 1: Фаззификация
-        fuzzified = self.fuzzify_all(numeric_inputs)
+        fuzzified = self.fuzzify_all(inputs)
         
-        print("=== Фаззификация ===")
+        print("=" * 60)
+        print("ШАГ 1: ФАЗЗИФИКАЦИЯ")
+        print("=" * 60)
         for var_id, memberships in fuzzified.items():
             var = self.get_variable_by_id(var_id)
             var_name = var.name if var else f"Переменная {var_id}"
-            print(f"{var_name}:")
+            print(f"  {var_name} (ID={var_id}):")
             for term, mu in memberships.items():
-                print(f"  {term}: {mu}")
+                print(f"    {term}: μ = {mu}")
         
-        # Следующие шаги: агрегация, активация, аккумуляция, дефаззификация
+        # Шаг 2: Агрегирование условий
+        print("\n" + "=" * 60)
+        print("ШАГ 2: АГРЕГИРОВАНИЕ УСЛОВИЙ")
+        print("=" * 60)
+        
+        rule_results = []
+        for rule in self.rule_set.rules:
+            rule_degree = self._aggregate_conditions(rule, fuzzified)
+            # Применяем вес правила
+            weighted_degree = round(rule_degree * rule.weight, 4)
+            rule_results.append({
+                "rule_id": rule.id,
+                "conditions_degree": rule_degree,
+                "weight": rule.weight,
+                "weighted_degree": weighted_degree,
+                "conclusions": rule.conclusions
+            })
+            
+            print(f"  Правило {rule.id + 1}:")
+            print(f"    Условия: ", end="")
+            cond_strs = []
+            for c in rule.conditions:
+                var = self.get_variable_by_id(c.variable_id)
+                var_name = var.name if var else f"?{c.variable_id}"
+                cond_strs.append(f"{var_name} IS {c.term}")
+            print(" И ".join(cond_strs) if rule.conditions[0].operator == LogicalOperator.AND else " ИЛИ ".join(cond_strs))
+            print(f"    Степень истинности: {rule_degree}")
+            print(f"    Вес правила: {rule.weight}")
+            print(f"    Взвешенная степень: {weighted_degree}")
+        
+        # Следующие шаги: активация, аккумуляция, дефаззификация
         return {}

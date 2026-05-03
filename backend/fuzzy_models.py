@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Literal
 from pydantic import BaseModel, Field, validator
 
 class LogicalOperator(str, Enum):
@@ -12,7 +12,7 @@ class VariableType(str, Enum):
 
 class FuzzyTerm(BaseModel):
     name: str
-    mf_type: str = 'trapezoid'
+    mf_type: Literal['trapezoid', 'triangle', 'gaussian'] = 'trapezoid'
     mf_params: list[float] = [0.0, 0.25, 0.75, 1.0]
 
 class LinguisticVariable(BaseModel):

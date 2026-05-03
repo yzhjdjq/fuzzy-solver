@@ -30,6 +30,7 @@ CollapsibleSection {
         
         delegate: RuleItem {
             ruleId: modelData.id
+            weight: modelData.weight
             conditions: modelData.conditions
             conclusions: modelData.conclusions
             inputVariables: root.inputVariablesModel
