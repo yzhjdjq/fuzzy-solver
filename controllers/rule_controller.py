@@ -290,10 +290,18 @@ class RuleController(QObject):
             return
         
         json_data = self.engine.to_json()
-        print("Текущие правила и переменные:", json_data)
-        print("Входные значения:", self._input_values)
-        print("Метод дефаззификации:", self._defuzz_method)
-        # Здесь будет вызов нечеткого вывода
+        # Выполняем расчёт
+        # print("Текущие правила и переменные:", json_data)
+        print("=" * 50)
+        print("ЗАПУСК НЕЧЁТКОГО ВЫВОДА")
+        print("=" * 50)
+        print(f"Входные значения: {self._input_values}")
+        print(f"Метод дефаззификации: {self._defuzz_method}")
+        
+        result = self.engine.evaluate(self._input_values)
+        
+        print("=" * 50)
+        print("Результат:", result)
 
     @Slot(int, result=str)
     def pluralizeInput(self, count: int) -> str:
