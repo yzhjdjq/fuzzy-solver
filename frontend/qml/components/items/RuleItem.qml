@@ -345,10 +345,10 @@ Item {
                                 variablesModel: root.outputVariables
                                 currentVariableId: modelData.variable_id
                                 currentTerm: modelData.term
-                                currentOperator: modelData.operator
                                 isLast: model.index === conclusions.length - 1
                                 showRemove: conclusions.length > 1
                                 showAddButton: conclusions.length < 3
+                                showOperator: false
                                 Layout.fillWidth: true
                                 Layout.topMargin: 2
                                 Layout.bottomMargin: 2

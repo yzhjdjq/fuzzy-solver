@@ -138,6 +138,9 @@ ApplicationWindow {
                         Layout.leftMargin: 20
                         Layout.rightMargin: 20
                         
+                        onActivationMethodChanged: (method) => {
+                            ruleController.setActivationMethod(method)
+                        }
                         onInputValueChanged: (varId, value) => {
                             ruleController.setInputValue(varId, value)
                         }

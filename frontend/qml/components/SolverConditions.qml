@@ -8,12 +8,14 @@ CollapsibleSection {
     id: root
     
     property var inputVariablesModel: []
+    property string activationMethod: "min"
     property string defuzzMethod: "bos"
     
     property var pendingValues: ({})
     property var selectedInputValues: ({})
     property var selectedVarIds: []
     
+    signal activationMethodSelected(string method)
     signal inputValueChanged(int varId, double value)
     signal inputVariableRemoved(int varId)
     signal inputVariableAdded(int varId)
@@ -176,6 +178,56 @@ CollapsibleSection {
                         inputVarCombo.currentIndex = -1
                     }
                 }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 1
+            color: Theme.border
+            Layout.topMargin: 5
+            Layout.bottomMargin: 5
+        }
+
+        Text {
+            text: "Метод активации:"
+            font.pixelSize: Theme.fontSizeNormal
+            font.weight: Font.Bold
+            color: Theme.textPrimary
+        }
+
+        ComboBox {
+            id: activationCombo
+            model: [
+                { text: "Минимум (min)", value: "min" },
+                { text: "Произведение (prod)", value: "prod" },
+                { text: "Среднее (average)", value: "average" }
+            ]
+            textRole: "text"
+            
+            currentIndex: 0
+            
+            Layout.fillWidth: true
+            Layout.preferredHeight: 36
+            implicitHeight: 36
+            
+            background: Rectangle {
+                radius: 6
+                color: parent.hovered ? "#F5F5F5" : Theme.surface
+                border.color: activationCombo.activeFocus ? Theme.primary : Theme.border
+                border.width: activationCombo.activeFocus ? 2 : 1
+            }
+            
+            contentItem: Text {
+                text: parent.displayText
+                color: Theme.textPrimary
+                font.pixelSize: Theme.fontSizeNormal
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: 12
+            }
+            
+            onActivated: {
+                root.activationMethodSelected(model[currentIndex].value)
             }
         }
         

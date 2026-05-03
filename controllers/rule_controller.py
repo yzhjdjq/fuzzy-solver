@@ -31,6 +31,7 @@ class RuleController(QObject):
         self._rules = []
         self._variables = []
         self._input_values = {}
+        self._activation_method = "min"
         self._defuzz_method = "bos"
         self._update_rules_model()
         self._update_variables_model()
@@ -274,9 +275,13 @@ class RuleController(QObject):
         print("ЗАПУСК НЕЧЁТКОГО ВЫВОДА")
         print("=" * 50)
         print(f"Входные значения: {self._input_values}")
+        print(f"Метод активации: {self._activation_method}")
         print(f"Метод дефаззификации: {self._defuzz_method}")
         
-        result = self.engine.evaluate(self._input_values)
+        result = self.engine.evaluate(
+            self._input_values,
+            self._activation_method
+        )
         
         print("=" * 50)
         print("Результат:", result)
@@ -440,3 +445,8 @@ class RuleController(QObject):
     def setDefuzzMethod(self, method: str):
         """Установить метод дефаззификации"""
         self._defuzz_method = method
+
+    @Slot(str)
+    def setActivationMethod(self, method: str):
+        """Установить метод активации"""
+        self._activation_method = method

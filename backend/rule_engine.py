@@ -287,8 +287,29 @@ class RuleEngine:
                 result = max(result, memberships[i])
         
         return round(result, 4)
-    
-    def evaluate(self, inputs: dict[int, float]) -> dict[str, float]:
+
+    def _activate_conclusions(self, rule: Rule, weighted_degree: float, method: str) -> list[dict]:
+        """Активация заключений правила"""
+        activated = []
+        for conclusion in rule.conclusions:
+            var = self.get_variable_by_id(conclusion.variable_id)
+            if not var:
+                continue
+            
+            term = next((t for t in var.terms if t.name == conclusion.term), None)
+            if not term:
+                continue
+            
+            activated.append({
+                "variable_id": conclusion.variable_id,
+                "term": term,
+                "weighted_degree": weighted_degree,  # μ правила
+                "activation_method": method
+            })
+        
+        return activated
+
+    def evaluate(self, inputs: dict[int, float], activation_method: str = "min") -> dict[str, float]:
         """Выполнить нечеткий вывод"""
         # Шаг 1: Фаззификация
         fuzzified = self.fuzzify_all(inputs)
@@ -314,11 +335,8 @@ class RuleEngine:
             # Применяем вес правила
             weighted_degree = round(rule_degree * rule.weight, 4)
             rule_results.append({
-                "rule_id": rule.id,
-                "conditions_degree": rule_degree,
-                "weight": rule.weight,
-                "weighted_degree": weighted_degree,
-                "conclusions": rule.conclusions
+                "rule": rule,
+                "weighted_degree": weighted_degree
             })
             
             print(f"  Правило {rule.id + 1}:")
@@ -333,5 +351,26 @@ class RuleEngine:
             print(f"    Вес правила: {rule.weight}")
             print(f"    Взвешенная степень: {weighted_degree}")
         
-        # Следующие шаги: активация, аккумуляция, дефаззификация
+        # Шаг 3: Активация заключений
+        print("\n" + "=" * 60)
+        print(f"ШАГ 3: АКТИВАЦИЯ ЗАКЛЮЧЕНИЙ (метод: {activation_method})")
+        print("=" * 60)
+        
+        all_activated = []
+        for result in rule_results:
+            activated = self._activate_conclusions(
+                result["rule"],
+                result["weighted_degree"],
+                activation_method
+            )
+            all_activated.extend(activated)
+            
+            print(f"  Правило {result['rule'].id + 1}:")
+            for act in activated:
+                var = self.get_variable_by_id(act["variable_id"])
+                var_name = var.name if var else f"?{act['variable_id']}"
+                print(f"    {var_name} IS {act['term'].name}: degree = {act['weighted_degree']}")
+        
+        # Шаг 4: Аккумуляция (будет следующим этапом)
+        
         return {}

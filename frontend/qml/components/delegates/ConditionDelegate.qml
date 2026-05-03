@@ -15,7 +15,10 @@ Item {
     property bool isLast: true
     property bool showRemove: true
     property bool showAddButton: false
+    property bool showOperator: true
     
+    property var currentTerms: []
+
     signal variableChanged(int ruleId, string group, int index, int variableId, string term)
     signal operatorChanged(int ruleId, string group, int index, string operator)
     signal remove()
@@ -24,10 +27,6 @@ Item {
     implicitHeight: 36
     implicitWidth: 200
     
-    // Термы текущей переменной - обновляются через функцию
-    property var currentTerms: []
-    
-    // Функция обновления списка термов
     function updateTerms() {
         var terms = []
         for (var i = 0; i < variablesModel.length; i++) {
@@ -38,7 +37,6 @@ Item {
         }
         currentTerms = terms
         
-        // Обновляем индекс терма
         var termIndex = -1
         for (var j = 0; j < terms.length; j++) {
             if (terms[j].name === currentTerm) {
@@ -53,7 +51,6 @@ Item {
         }
     }
     
-    // Функция поиска индекса переменной
     function findVariableIndex() {
         for (var i = 0; i < variablesModel.length; i++) {
             if (variablesModel[i].id === currentVariableId) return i
@@ -61,7 +58,6 @@ Item {
         return variablesModel.length > 0 ? 0 : -1
     }
     
-    // Обновляем термы при изменении переменной или модели
     onVariablesModelChanged: updateTerms()
     onCurrentVariableIdChanged: updateTerms()
     onCurrentTermChanged: updateTerms()
@@ -154,7 +150,7 @@ Item {
             id: operatorCombo
             model: ["и", "или"]
             currentIndex: currentOperator === "или" ? 1 : 0
-            visible: !isLast
+            visible: showOperator && !isLast
             Layout.preferredWidth: 70
             Layout.minimumWidth: 60
             Layout.preferredHeight: 36
