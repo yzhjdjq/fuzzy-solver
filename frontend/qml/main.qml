@@ -161,7 +161,13 @@ ApplicationWindow {
                         Layout.leftMargin: 20
                         Layout.rightMargin: 20
                     }
-                    
+
+                    AccumulatedResults {
+                        id: accumulatedSection
+                        Layout.leftMargin: 20
+                        Layout.rightMargin: 20
+                    }
+
                     Item { Layout.fillWidth: true; Layout.preferredHeight: 20 }
                 }
             }
@@ -183,6 +189,13 @@ ApplicationWindow {
         function onErrorOccurred(message) {
             errorDialog.errorText = message
             errorDialog.open()
+        }
+        function onResultsAccumulated(data) {
+            var result = {}
+            for (var i = 0; i < data.length; i++) {
+                result[data[i].variable_id] = data[i]
+            }
+            accumulatedSection.accumulatedData = result
         }
     }
     

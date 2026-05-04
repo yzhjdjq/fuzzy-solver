@@ -24,6 +24,7 @@ class RuleController(QObject):
     rulesChanged = Signal(list)
     variablesChanged = Signal(list)
     errorOccurred = Signal(str)
+    resultsAccumulated = Signal(list)
     
     def __init__(self):
         super().__init__()
@@ -233,6 +234,45 @@ class RuleController(QObject):
     def variables(self):
         return self._variables
 
+    def _convert_for_qml(self, data: dict) -> list:
+        """Конвертирует результаты аккумуляции в формат, понятный QML"""
+        result = []
+        for var_id, var_data in data.items():
+            acc = var_data["accumulated"]
+            
+            # Конвертируем activated_terms
+            activated_terms = []
+            for term in acc["activated_terms"]:
+                # Конвертируем points в список словарей
+                points = []
+                for p in term["points"]:
+                    points.append({"x": p["x"], "y": p["y"]})
+                
+                activated_terms.append({
+                    "term_name": term["term"].name,
+                    "degree": term["degree"],
+                    "method": term["method"],
+                    "points": points,
+                    "mf_type": term["mf_type"],
+                    "mf_params": term["mf_params"]
+                })
+            
+            # Конвертируем max_points
+            max_points = []
+            for p in acc["max_points"]:
+                max_points.append({"x": p["x"], "y": p["y"]})
+            
+            result.append({
+                "variable_id": var_id,
+                "variable_name": var_data["variable_name"],
+                "accumulated": {
+                    "activated_terms": activated_terms,
+                    "max_points": max_points
+                }
+            })
+        
+        return result
+
     @Slot()
     def evaluate(self):
         """Выполнить расчет с проверками"""
@@ -282,9 +322,12 @@ class RuleController(QObject):
             self._input_values,
             self._activation_method
         )
-        
+
+        qml_data = self._convert_for_qml(result)
+        self.resultsAccumulated.emit(qml_data)
+
         print("=" * 50)
-        print("Результат:", result)
+        # print("Результат:", result)
 
     @Slot(int, result=str)
     def pluralizeInput(self, count: int) -> str:

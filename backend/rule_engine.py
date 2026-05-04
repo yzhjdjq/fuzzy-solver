@@ -309,6 +309,99 @@ class RuleEngine:
         
         return activated
 
+    def _activate_term(self, term: FuzzyTerm, degree: float, method: str) -> dict:
+        """
+        Активация одного терма.
+        Возвращает активированную функцию принадлежности как набор точек для графика
+        и математическое представление для дефаззификации.
+        """
+        params = term.mf_params
+        mf_type = term.mf_type
+        
+        # Генерируем точки для графика (100 точек на диапазон параметров)
+        all_params = params
+        min_val = min(all_params) - 0.1 * (max(all_params) - min(all_params) or 1)
+        max_val = max(all_params) + 0.1 * (max(all_params) - min(all_params) or 1)
+        
+        points = []
+        step = (max_val - min_val) / 100
+        x = min_val
+        
+        while x <= max_val:
+            # Исходная функция принадлежности
+            match mf_type:
+                case "triangle":
+                    original_mu = self._triangular_mf(x, params)
+                case "trapezoid":
+                    original_mu = self._trapezoidal_mf(x, params)
+                case "gaussian":
+                    original_mu = self._gaussian_mf(x, params)
+                case _:
+                    original_mu = 0.0
+            
+            # Активация
+            match method:
+                case "min":
+                    activated_mu = min(degree, original_mu)
+                case "prod":
+                    activated_mu = degree * original_mu
+                case "average":
+                    activated_mu = (degree + original_mu) / 2
+                case _:
+                    activated_mu = min(degree, original_mu)
+            
+            points.append({"x": round(x, 3), "y": round(activated_mu, 3)})
+            x += step
+        
+        return {
+            "term": term,
+            "degree": degree,
+            "method": method,
+            "points": points,
+            "mf_type": mf_type,
+            "mf_params": params
+        }
+
+    def _apply_activation(self, mu: float, degree: float, method: str) -> float:
+        match method:
+            case "min":
+                return min(degree, mu)
+            case "prod":
+                return degree * mu
+            case "average":
+                return (degree + mu) / 2
+        return mu
+
+    def _accumulate(self, activated_terms: list[dict]) -> dict:
+        if not activated_terms:
+            return {"points": [], "max_points": []}
+        
+        # Собираем все X от всех термов
+        all_x = set()
+        for term_data in activated_terms:
+            for point in term_data["points"]:
+                all_x.add(point["x"])
+        
+        sorted_x = sorted(list(all_x))
+        
+        # Для каждого X вычисляем максимум по всем термам напрямую
+        max_points = []
+        for x in sorted_x:
+            max_y = 0.0
+            for term_data in activated_terms:
+                # Вычисляем значение функции терма в точке x
+                term = term_data.get("term")
+                if term:
+                    y = self._calculate_membership(x, term)
+                    activated_y = self._apply_activation(y, term_data["degree"], term_data["method"])
+                    max_y = max(max_y, activated_y)
+            max_points.append({"x": x, "y": round(max_y, 4)})
+        
+        return {
+            "activated_terms": activated_terms,
+            "max_points": max_points
+        }
+
     def evaluate(self, inputs: dict[int, float], activation_method: str = "min") -> dict[str, float]:
         """Выполнить нечеткий вывод"""
         # Шаг 1: Фаззификация
@@ -371,6 +464,41 @@ class RuleEngine:
                 var_name = var.name if var else f"?{act['variable_id']}"
                 print(f"    {var_name} IS {act['term'].name}: degree = {act['weighted_degree']}")
         
-        # Шаг 4: Аккумуляция (будет следующим этапом)
+        # Шаг 4: Аккумуляция
+        print("\n" + "=" * 60)
+        print("ШАГ 4: АККУМУЛЯЦИЯ")
+        print("=" * 60)
         
-        return {}
+        # Группируем активированные термы по выходным переменным
+        accumulated = {}
+        for act in all_activated:
+            var_id = act["variable_id"]
+            if var_id not in accumulated:
+                accumulated[var_id] = []
+            
+            # Активируем терм
+            activated_term = self._activate_term(
+                act["term"],
+                act["weighted_degree"],
+                act["activation_method"]
+            )
+            accumulated[var_id].append(activated_term)
+        
+        # Аккумулируем для каждой выходной переменной
+        result = {}
+        for var_id, terms in accumulated.items():
+            var = self.get_variable_by_id(var_id)
+            var_name = var.name if var else f"Переменная {var_id}"
+            
+            acc_result = self._accumulate(terms)
+            result[var_id] = {
+                "variable_name": var_name,
+                "accumulated": acc_result
+            }
+            
+            print(f"  {var_name}:")
+            for term in terms:
+                print(f"    {term['term'].name}: degree = {term['degree']}, "
+                    f"method = {term['method']}")
+        
+        return result
