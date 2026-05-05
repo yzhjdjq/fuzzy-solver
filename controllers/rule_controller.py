@@ -25,6 +25,7 @@ class RuleController(QObject):
     variablesChanged = Signal(list)
     errorOccurred = Signal(str)
     resultsAccumulated = Signal(list)
+    crispResultsReady = Signal(list)
     
     def __init__(self):
         super().__init__()
@@ -320,11 +321,22 @@ class RuleController(QObject):
         
         result = self.engine.evaluate(
             self._input_values,
-            self._activation_method
+            self._activation_method,
+            self._defuzz_method
         )
 
         qml_data = self._convert_for_qml(result)
         self.resultsAccumulated.emit(qml_data)
+
+        crisp_results = []
+        for var_id, data in result.items():
+            crisp_results.append({
+                "variable_id": var_id,
+                "variable_name": data["variable_name"],
+                "crisp_value": data["crisp_value"],
+                "best_term": data.get("best_term", "")
+            })
+        self.crispResultsReady.emit(crisp_results)
 
         print("=" * 50)
         # print("Результат:", result)

@@ -8,7 +8,7 @@ ApplicationWindow {
     id: mainWindow
     visible: true
     width: 950; height: 600
-    minimumWidth: 950; minimumHeight: 450
+    minimumWidth: 950; minimumHeight: 570
     title: "Решатель 0.1.0"
     color: Theme.background
     
@@ -59,36 +59,8 @@ ApplicationWindow {
                     id: mainColumn
                     width: scrollView.width
                     spacing: Theme.radiusSmall
-                    
-                    StatsPanel {
-                        inputVarsCount: inputVariablesModel.length
-                        outputVarsCount: outputVariablesModel.length
-                        totalVarsCount: variablesModel.length
-                        rulesCount: rulesModel.length
-                        Layout.topMargin: parent.spacing
-                        Layout.leftMargin: 20
-                        Layout.rightMargin: 20
-                        
-                        onCalculateClicked: {
-                            if (inputVariablesModel.length === 0) {
-                                errorDialog.errorText = "Добавьте хотя бы одну входную переменную"
-                                errorDialog.open()
-                                return
-                            }
-                            if (outputVariablesModel.length === 0) {
-                                errorDialog.errorText = "Добавьте хотя бы одну выходную переменную"
-                                errorDialog.open()
-                                return
-                            }
-                            if (rulesModel.length === 0) {
-                                errorDialog.errorText = "Добавьте хотя бы одно правило"
-                                errorDialog.open()
-                                return
-                            }
-                            ruleController.evaluate()
-                            graphsSection.graphsGenerated = true
-                        }
-                    }
+
+                    Item { Layout.fillWidth: true; Layout.preferredHeight: 0 }
                     
                     VariablesSection {
                         id: variablesSection
@@ -154,6 +126,35 @@ ApplicationWindow {
                             ruleController.setDefuzzMethod(method)
                         }
                     }
+                    
+                    StatsPanel {
+                        inputVarsCount: inputVariablesModel.length
+                        outputVarsCount: outputVariablesModel.length
+                        totalVarsCount: variablesModel.length
+                        rulesCount: rulesModel.length
+                        Layout.leftMargin: 20
+                        Layout.rightMargin: 20
+                        
+                        onCalculateClicked: {
+                            if (inputVariablesModel.length === 0) {
+                                errorDialog.errorText = "Добавьте хотя бы одну входную переменную"
+                                errorDialog.open()
+                                return
+                            }
+                            if (outputVariablesModel.length === 0) {
+                                errorDialog.errorText = "Добавьте хотя бы одну выходную переменную"
+                                errorDialog.open()
+                                return
+                            }
+                            if (rulesModel.length === 0) {
+                                errorDialog.errorText = "Добавьте хотя бы одно правило"
+                                errorDialog.open()
+                                return
+                            }
+                            ruleController.evaluate()
+                            graphsSection.graphsGenerated = true
+                        }
+                    }
 
                     GraphsSection {
                         id: graphsSection
@@ -164,6 +165,12 @@ ApplicationWindow {
 
                     AccumulatedResults {
                         id: accumulatedSection
+                        Layout.leftMargin: 20
+                        Layout.rightMargin: 20
+                    }
+
+                    CrispResults {
+                        id: crispSection
                         Layout.leftMargin: 20
                         Layout.rightMargin: 20
                     }
@@ -196,6 +203,9 @@ ApplicationWindow {
                 result[data[i].variable_id] = data[i]
             }
             accumulatedSection.accumulatedData = result
+        }
+        function onCrispResultsReady(data) {
+            crispSection.crispData = data
         }
     }
     

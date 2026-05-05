@@ -402,26 +402,139 @@ class RuleEngine:
             "max_points": max_points
         }
 
-    def evaluate(self, inputs: dict[int, float], activation_method: str = "min") -> dict[str, float]:
-        """Выполнить нечеткий вывод"""
-        # Шаг 1: Фаззификация
-        fuzzified = self.fuzzify_all(inputs)
+    def _defuzzify_centroid(self, max_points: list[dict]) -> float:
+        """Центр тяжести (Centroid)"""
+        if len(max_points) < 2:
+            return 0.0
         
+        numerator = 0.0
+        denominator = 0.0
+        
+        for i in range(len(max_points) - 1):
+            x1, y1 = max_points[i]["x"], max_points[i]["y"]
+            x2, y2 = max_points[i + 1]["x"], max_points[i + 1]["y"]
+            dx = x2 - x1
+            
+            # Интегрируем методом трапеций
+            numerator += dx * (x1 * y1 + x2 * y2) / 2
+            denominator += dx * (y1 + y2) / 2
+        
+        if denominator == 0:
+            return 0.0
+        
+        return numerator / denominator
+
+    def _defuzzify_lom(self, max_points: list[dict]) -> float:
+        """Левая мода (Left of Maximum)"""
+        if not max_points:
+            return 0.0
+        
+        max_y = max(p["y"] for p in max_points)
+        for p in max_points:
+            if p["y"] >= max_y * 0.99:
+                return p["x"]
+        return max_points[0]["x"]
+
+    def _defuzzify_rom(self, max_points: list[dict]) -> float:
+        """Правая мода (Right of Maximum)"""
+        if not max_points:
+            return 0.0
+        
+        max_y = max(p["y"] for p in max_points)
+        result = max_points[0]["x"]
+        for p in max_points:
+            if p["y"] >= max_y * 0.99:
+                result = p["x"]
+        return result
+
+    def _defuzzify_bos(self, max_points: list[dict]) -> float:
+        """Биссектриса площади (Bisector of Area)"""
+        if len(max_points) < 2:
+            return 0.0
+        
+        # Вычисляем общую площадь
+        total_area = 0.0
+        for i in range(len(max_points) - 1):
+            dx = max_points[i + 1]["x"] - max_points[i]["x"]
+            total_area += dx * (max_points[i]["y"] + max_points[i + 1]["y"]) / 2
+        
+        if total_area == 0:
+            return 0.0
+        
+        half_area = total_area / 2
+        accumulated = 0.0
+        
+        for i in range(len(max_points) - 1):
+            x1, y1 = max_points[i]["x"], max_points[i]["y"]
+            x2, y2 = max_points[i + 1]["x"], max_points[i + 1]["y"]
+            dx = x2 - x1
+            segment_area = dx * (y1 + y2) / 2
+            
+            if accumulated + segment_area >= half_area:
+                remaining = half_area - accumulated
+                if segment_area > 0:
+                    t = remaining / segment_area
+                    return x1 + t * dx
+                return x1
+            
+            accumulated += segment_area
+        
+        return max_points[-1]["x"]
+
+    def _defuzzify(self, max_points: list[dict], method: str) -> float:
+        """Дефаззификация результирующей функции"""
+        match method:
+            case "centroid":
+                return self._defuzzify_centroid(max_points)
+            case "lom":
+                return self._defuzzify_lom(max_points)
+            case "rom":
+                return self._defuzzify_rom(max_points)
+            case "bos":
+                return self._defuzzify_bos(max_points)
+            case _:
+                return self._defuzzify_centroid(max_points)
+
+    def _find_best_term(self, var_id: int, crisp_value: float) -> str:
+        """Найти терм с максимальной принадлежностью для чёткого значения"""
+        var = self.get_variable_by_id(var_id)
+        if not var or not var.terms:
+            return ""
+        
+        best_term = ""
+        best_mu = -1.0
+        
+        for term in var.terms:
+            mu = self._calculate_membership(crisp_value, term)
+            if mu > best_mu:
+                best_mu = mu
+                best_term = term.name
+        
+        return best_term
+
+    def evaluate(
+        self,
+        inputs: dict[int, float],
+        activation_method: str = "min",
+        defuzz_method: str = "bos"
+    ) -> dict[str, float]:
+        """Выполнить нечеткий вывод"""
         print("=" * 60)
         print("ШАГ 1: ФАЗЗИФИКАЦИЯ")
         print("=" * 60)
+
+        fuzzified = self.fuzzify_all(inputs)
         for var_id, memberships in fuzzified.items():
             var = self.get_variable_by_id(var_id)
             var_name = var.name if var else f"Переменная {var_id}"
             print(f"  {var_name} (ID={var_id}):")
             for term, mu in memberships.items():
                 print(f"    {term}: μ = {mu}")
-        
-        # Шаг 2: Агрегирование условий
+
         print("\n" + "=" * 60)
         print("ШАГ 2: АГРЕГИРОВАНИЕ УСЛОВИЙ")
         print("=" * 60)
-        
+
         rule_results = []
         for rule in self.rule_set.rules:
             rule_degree = self._aggregate_conditions(rule, fuzzified)
@@ -431,7 +544,7 @@ class RuleEngine:
                 "rule": rule,
                 "weighted_degree": weighted_degree
             })
-            
+
             print(f"  Правило {rule.id + 1}:")
             print(f"    Условия: ", end="")
             cond_strs = []
@@ -443,12 +556,11 @@ class RuleEngine:
             print(f"    Степень истинности: {rule_degree}")
             print(f"    Вес правила: {rule.weight}")
             print(f"    Взвешенная степень: {weighted_degree}")
-        
-        # Шаг 3: Активация заключений
+
         print("\n" + "=" * 60)
         print(f"ШАГ 3: АКТИВАЦИЯ ЗАКЛЮЧЕНИЙ (метод: {activation_method})")
         print("=" * 60)
-        
+
         all_activated = []
         for result in rule_results:
             activated = self._activate_conclusions(
@@ -457,25 +569,23 @@ class RuleEngine:
                 activation_method
             )
             all_activated.extend(activated)
-            
+
             print(f"  Правило {result['rule'].id + 1}:")
             for act in activated:
                 var = self.get_variable_by_id(act["variable_id"])
                 var_name = var.name if var else f"?{act['variable_id']}"
                 print(f"    {var_name} IS {act['term'].name}: degree = {act['weighted_degree']}")
-        
-        # Шаг 4: Аккумуляция
+
         print("\n" + "=" * 60)
         print("ШАГ 4: АККУМУЛЯЦИЯ")
         print("=" * 60)
-        
-        # Группируем активированные термы по выходным переменным
+
         accumulated = {}
         for act in all_activated:
             var_id = act["variable_id"]
             if var_id not in accumulated:
                 accumulated[var_id] = []
-            
+
             # Активируем терм
             activated_term = self._activate_term(
                 act["term"],
@@ -483,22 +593,42 @@ class RuleEngine:
                 act["activation_method"]
             )
             accumulated[var_id].append(activated_term)
-        
-        # Аккумулируем для каждой выходной переменной
+
         result = {}
         for var_id, terms in accumulated.items():
             var = self.get_variable_by_id(var_id)
             var_name = var.name if var else f"Переменная {var_id}"
-            
+
             acc_result = self._accumulate(terms)
             result[var_id] = {
                 "variable_name": var_name,
                 "accumulated": acc_result
             }
-            
+
             print(f"  {var_name}:")
             for term in terms:
                 print(f"    {term['term'].name}: degree = {term['degree']}, "
                     f"method = {term['method']}")
+
+        print("\n" + "=" * 60)
+        print(f"ШАГ 5: ДЕФАЗЗИФИКАЦИЯ (метод: {defuzz_method})")
+        print("=" * 60)
         
-        return result
+        results = {}
+        for var_id, terms in accumulated.items():
+            var = self.get_variable_by_id(var_id)
+            var_name = var.name if var else f"Переменная {var_id}"
+            
+            acc_result = self._accumulate(terms)
+            crisp_value = self._defuzzify(acc_result["max_points"], defuzz_method)
+            best_term = self._find_best_term(var_id, crisp_value)
+
+            results[var_id] = {
+                "variable_name": var_name,
+                "crisp_value": round(crisp_value, 4),
+                "best_term": best_term,
+                "accumulated": acc_result
+            }
+            print(f"  {var_name}: {crisp_value:.4f}")
+
+        return results
