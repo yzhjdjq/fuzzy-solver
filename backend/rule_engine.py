@@ -14,16 +14,16 @@ class RuleEngine:
         """Инициализация тестовыми лингвистическими переменными"""
         # Входные переменные
         temp_terms = [
-            FuzzyTerm(name="низкая", mf_type="triangle", mf_params=[-10.0, -10.0, 13.0]),
+            FuzzyTerm(name="низкая", mf_type="triangle", mf_params=[-10.01, -10.0, 13.0]),
             # FuzzyTerm(name="средняя"),
-            FuzzyTerm(name="высокая", mf_type="triangle", mf_params=[10.0, 45.0, 45.0])
+            FuzzyTerm(name="высокая", mf_type="triangle", mf_params=[10.0, 45.0, 45.01])
         ]
         temp_var = LinguisticVariable(id=0, name="Температура", type=VariableType.INPUT, terms=temp_terms)
         
         humidity_terms = [
-            FuzzyTerm(name="низкая", mf_type="triangle", mf_params=[0.0, 0.0, 75.0]),
+            FuzzyTerm(name="низкая", mf_type="triangle", mf_params=[-0.01, 0.0, 75.0]),
             # FuzzyTerm(name="средняя"),
-            FuzzyTerm(name="высокая", mf_type="triangle", mf_params=[50.0, 100.0, 100.0])
+            FuzzyTerm(name="высокая", mf_type="triangle", mf_params=[50.0, 100.0, 100.01])
         ]
         humidity_var = LinguisticVariable(id=1, name="Влажность", type=VariableType.INPUT, terms=humidity_terms)
         
@@ -43,9 +43,9 @@ class RuleEngine:
         # power_var = LinguisticVariable(id=3, name="Мощность", type=VariableType.OUTPUT, terms=power_terms)
         
         speed_terms = [
-            FuzzyTerm(name="низкая", mf_type="triangle", mf_params=[0.0, 0.0, 13.0]),
+            FuzzyTerm(name="низкая", mf_type="triangle", mf_params=[-0.01, 0.0, 13.0]),
             # FuzzyTerm(name="средняя"),
-            FuzzyTerm(name="высокая", mf_type="triangle", mf_params=[10.0, 25.0, 25.0])
+            FuzzyTerm(name="высокая", mf_type="triangle", mf_params=[10.0, 25.0, 25.01])
         ]
         speed_var = LinguisticVariable(id=2, name="Скорость", type=VariableType.OUTPUT, terms=speed_terms)
         
@@ -53,7 +53,7 @@ class RuleEngine:
 
         rule1 = Rule(
             id=0,
-            weight=0.5,
+            weight=1,
             conditions=[Condition(
                 variable_id=temp_var.id,    # температура
                 term=temp_var.terms[0].name,    # низкая
@@ -67,7 +67,7 @@ class RuleEngine:
         )
         rule2 = Rule(
             id=1,
-            weight=0.5,
+            weight=1,
             conditions=[Condition(
                 variable_id=temp_var.id,    # температура
                 term=temp_var.terms[1].name,    # высокая
@@ -81,7 +81,7 @@ class RuleEngine:
         )
         rule3 = Rule(
             id=2,
-            weight=0.5,
+            weight=1,
             conditions=[
                 Condition(
                     variable_id=temp_var.id,    # температура
@@ -309,6 +309,17 @@ class RuleEngine:
         
         return activated
 
+    def _apply_activation(self, mu: float, degree: float, method: str) -> float:
+        match method:
+            case "min":
+                return min(degree, mu)
+            case "prod":
+                return degree * mu
+            case "average":
+                return (degree + mu) / 2
+            case _:
+                return min(degree, mu)
+
     def _activate_term(self, term: FuzzyTerm, degree: float, method: str) -> dict:
         """
         Активация одного терма.
@@ -320,8 +331,8 @@ class RuleEngine:
         
         # Генерируем точки для графика (100 точек на диапазон параметров)
         all_params = params
-        min_val = min(all_params) - 0.1 * (max(all_params) - min(all_params) or 1)
-        max_val = max(all_params) + 0.1 * (max(all_params) - min(all_params) or 1)
+        min_val = min(all_params)
+        max_val = max(all_params)
         
         points = []
         step = (max_val - min_val) / 100
@@ -340,16 +351,7 @@ class RuleEngine:
                     original_mu = 0.0
             
             # Активация
-            match method:
-                case "min":
-                    activated_mu = min(degree, original_mu)
-                case "prod":
-                    activated_mu = degree * original_mu
-                case "average":
-                    activated_mu = (degree + original_mu) / 2
-                case _:
-                    activated_mu = min(degree, original_mu)
-            
+            activated_mu = self._apply_activation(original_mu, degree, method)
             points.append({"x": round(x, 3), "y": round(activated_mu, 3)})
             x += step
         
@@ -361,16 +363,6 @@ class RuleEngine:
             "mf_type": mf_type,
             "mf_params": params
         }
-
-    def _apply_activation(self, mu: float, degree: float, method: str) -> float:
-        match method:
-            case "min":
-                return min(degree, mu)
-            case "prod":
-                return degree * mu
-            case "average":
-                return (degree + mu) / 2
-        return mu
 
     def _accumulate(self, activated_terms: list[dict]) -> dict:
         if not activated_terms:

@@ -106,11 +106,10 @@ ApplicationWindow {
                     SolverConditions {
                         id: solverSection
                         inputVariablesModel: mainWindow.inputVariablesModel
-                        defuzzMethod: "bos"
                         Layout.leftMargin: 20
                         Layout.rightMargin: 20
                         
-                        onActivationMethodChanged: (method) => {
+                        onActivationMethodSelected: (method) => {
                             ruleController.setActivationMethod(method)
                         }
                         onInputValueChanged: (varId, value) => {

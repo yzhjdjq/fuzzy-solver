@@ -3,14 +3,12 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../theme"
 import "items"
+import "delegates"
 
 CollapsibleSection {
     id: root
     
     property var inputVariablesModel: []
-    property string activationMethod: "min"
-    property string defuzzMethod: "bos"
-    
     property var pendingValues: ({})
     property var selectedInputValues: ({})
     property var selectedVarIds: []
@@ -102,7 +100,7 @@ CollapsibleSection {
         
         RowLayout {
             Layout.fillWidth: true
-            spacing: 10
+            spacing: Theme.radiusMedium
             
             ComboBox {
                 id: inputVarCombo
@@ -174,8 +172,6 @@ CollapsibleSection {
                         
                         root.inputVariableAdded(varId)
                         root.inputValueChanged(varId, 0.0)
-                        
-                        inputVarCombo.currentIndex = -1
                     }
                 }
             }
@@ -189,102 +185,33 @@ CollapsibleSection {
             Layout.bottomMargin: 5
         }
 
-        Text {
-            text: "Метод активации:"
-            font.pixelSize: Theme.fontSizeNormal
-            font.weight: Font.Bold
-            color: Theme.textPrimary
-        }
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.radiusMedium
+            
+            MethodSelector {
+                id: activationSelector
+                label: "Метод активации:"
+                model: [
+                    { text: "Минимум (min)", value: "min" },
+                    { text: "Произведение (prod)", value: "prod" },
+                    { text: "Среднее (average)", value: "average" }
+                ]
 
-        ComboBox {
-            id: activationCombo
-            model: [
-                { text: "Минимум (min)", value: "min" },
-                { text: "Произведение (prod)", value: "prod" },
-                { text: "Среднее (average)", value: "average" }
-            ]
-            textRole: "text"
-            
-            currentIndex: 0
-            
-            Layout.fillWidth: true
-            Layout.preferredHeight: 36
-            implicitHeight: 36
-            
-            background: Rectangle {
-                radius: 6
-                color: parent.hovered ? "#F5F5F5" : Theme.surface
-                border.color: activationCombo.activeFocus ? Theme.primary : Theme.border
-                border.width: activationCombo.activeFocus ? 2 : 1
+                onMethodSelected: (value) => root.activationMethodSelected(value)
             }
             
-            contentItem: Text {
-                text: parent.displayText
-                color: Theme.textPrimary
-                font.pixelSize: Theme.fontSizeNormal
-                verticalAlignment: Text.AlignVCenter
-                leftPadding: 12
-            }
-            
-            onActivated: {
-                root.activationMethodSelected(model[currentIndex].value)
-            }
-        }
-        
-        Rectangle {
-            Layout.fillWidth: true
-            height: 1
-            color: Theme.border
-            Layout.topMargin: 5
-            Layout.bottomMargin: 5
-        }
-        
-        Text {
-            text: "Метод дефаззификации:"
-            font.pixelSize: Theme.fontSizeNormal
-            font.weight: Font.Bold
-            color: Theme.textPrimary
-        }
-        
-        ComboBox {
-            id: defuzzCombo
-            model: [
-                { text: "Биссектриса площади (BoS)", value: "bos" },
-                { text: "Центр тяжести (Centroid)", value: "centroid" },
-                { text: "Левая мода (LoM)", value: "lom" },
-                { text: "Правая мода (RoM)", value: "rom" }
-            ]
-            textRole: "text"
-            
-            currentIndex: {
-                for (var i = 0; i < model.length; i++) {
-                    if (model[i].value === root.defuzzMethod) return i
-                }
-                return 0
-            }
-            
-            Layout.fillWidth: true
-            Layout.preferredHeight: 36
-            implicitHeight: 36
-            
-            background: Rectangle {
-                radius: 6
-                color: parent.hovered ? "#F5F5F5" : Theme.surface
-                border.color: defuzzCombo.activeFocus ? Theme.primary : Theme.border
-                border.width: defuzzCombo.activeFocus ? 2 : 1
-            }
-            
-            contentItem: Text {
-                text: parent.displayText
-                color: Theme.textPrimary
-                font.pixelSize: Theme.fontSizeNormal
-                verticalAlignment: Text.AlignVCenter
-                leftPadding: 12
-            }
-            
-            onActivated: {
-                root.defuzzMethod = model[currentIndex].value
-                root.defuzzMethodSelected(model[currentIndex].value)
+            MethodSelector {
+                id: defuzzSelector
+                label: "Метод дефазификации:"
+                model: [
+                    { text: "Биссектриса площади (BoS)", value: "bos" },
+                    { text: "Центр тяжести (Centroid)", value: "centroid" },
+                    { text: "Левая мода (LoM)", value: "lom" },
+                    { text: "Правая мода (RoM)", value: "rom" }
+                ]
+
+                onMethodSelected: (value) => root.defuzzMethodSelected(value)
             }
         }
     }
